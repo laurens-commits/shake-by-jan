@@ -18,6 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/consent.js" data-privacy="privacy.html"></script>
   <link rel="stylesheet" href="css/style.css">
 
   <script type="application/ld+json">
@@ -84,6 +85,7 @@
           <a href="#prijs" class="nav__link">Prijs</a>
           <a href="#jan" class="nav__link">Over Jan</a>
           <a href="#werkgebied" class="nav__link">Werkgebied</a>
+          <a href="recepten/" class="nav__link">Recepten</a>
           <a href="#faq" class="nav__link">Vragen</a>
         </div>
         <div class="nav__foot">
@@ -393,7 +395,7 @@
           <h2>Jan komt <em>naar jou toe</em></h2>
           <p class="section__lead section__lead--light">Shake by Jan komt op locatie binnen een straal van 30 km rond Heerhugowaard. Bij jou thuis, op kantoor, in een zaal of op een andere plek naar keuze. Reiskosten binnen dit gebied zitten al in de prijs.</p>
           <ul class="chips" aria-label="Plaatsen in het werkgebied">
-            <li>Heerhugowaard</li><li>Alkmaar</li><li>Dijk en Waard</li><li>Langedijk</li><li>Heiloo</li><li>Bergen</li><li>Egmond</li><li>Castricum</li><li>Schagen</li><li>Hoorn</li><li>Obdam</li><li>Purmerend</li><li>Medemblik</li><li>Uitgeest</li>
+            <li class="is-link"><a href="cocktailworkshop-heerhugowaard/">Heerhugowaard</a></li><li class="is-link"><a href="cocktailworkshop-alkmaar/">Alkmaar</a></li><li class="is-link"><a href="cocktailworkshop-hoorn/">Hoorn</a></li><li class="is-link"><a href="cocktailworkshop-schagen/">Schagen</a></li><li class="is-link"><a href="cocktailworkshop-castricum/">Castricum</a></li><li class="is-link"><a href="cocktailworkshop-purmerend/">Purmerend</a></li><li>Dijk en Waard</li><li>Langedijk</li><li>Heiloo</li><li>Bergen</li><li>Egmond</li><li>Obdam</li><li>Medemblik</li><li>Uitgeest</li>
           </ul>
           <p class="area__note">Net buiten de 30 km? Vraag het gerust, vaak is er iets mogelijk.</p>
         </div>
@@ -494,79 +496,94 @@
           <input type="hidden" name="subject" value="Nieuwe aanvraag via shakebyjan.nl">
           <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-occ">Gelegenheid</label>
-              <select id="f-occ" name="Gelegenheid" required>
-                <option value="">Kies…</option>
-                <option>Vriendengroep</option>
-                <option>Vrijgezellenfeest</option>
-                <option>Bedrijfsfeest</option>
-                <option>Verjaardag of jubileum</option>
-                <option>Bruiloft</option>
-                <option>Anders</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="f-type">Wat zoek je?</label>
-              <select id="f-type" name="Type">
-                <option selected>Cocktailworkshop</option>
-                <option>Cocktailbar op locatie</option>
-                <option>Weet ik nog niet</option>
-              </select>
-            </div>
-          </div>
+          <ol class="form__progress" aria-hidden="true">
+            <li class="is-active"><span>1</span>Wat &amp; wanneer</li>
+            <li><span>2</span>Groep &amp; plek</li>
+            <li><span>3</span>Gegevens</li>
+          </ol>
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-date">Datum</label>
-              <input type="date" id="f-date" name="Datum" required>
+          <fieldset class="form__step is-active" data-step="1">
+            <legend class="form__legend">Wat wil je organiseren?</legend>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-occ">Gelegenheid</label>
+                <select id="f-occ" name="Gelegenheid" required>
+                  <option value="">Kies…</option>
+                  <option>Vriendengroep</option>
+                  <option>Vrijgezellenfeest</option>
+                  <option>Bedrijfsfeest</option>
+                  <option>Verjaardag of jubileum</option>
+                  <option>Bruiloft</option>
+                  <option>Anders</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-type">Wat zoek je?</label>
+                <select id="f-type" name="Type">
+                  <option selected>Cocktailworkshop</option>
+                  <option>Cocktailbar op locatie</option>
+                  <option>Weet ik nog niet</option>
+                </select>
+              </div>
             </div>
-            <div class="field">
-              <label for="f-part">Dagdeel</label>
-              <select id="f-part" name="Dagdeel" required>
-                <option value="">Kies…</option>
-                <option>Ochtend</option>
-                <option>Middag</option>
-                <option>Avond</option>
-                <option>Weet ik nog niet</option>
-              </select>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-date">Datum</label>
+                <input type="date" id="f-date" name="Datum" required>
+              </div>
+              <div class="field">
+                <label for="f-part">Dagdeel</label>
+                <select id="f-part" name="Dagdeel" required>
+                  <option value="">Kies…</option>
+                  <option>Ochtend</option>
+                  <option>Middag</option>
+                  <option>Avond</option>
+                  <option>Weet ik nog niet</option>
+                </select>
+              </div>
             </div>
-          </div>
+            <div class="form__nav form__nav--first"><button type="button" class="btn btn--gold btn--lg" data-next>Volgende stap <span aria-hidden="true">→</span></button></div>
+          </fieldset>
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-n">Aantal personen</label>
-              <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+          <fieldset class="form__step" data-step="2">
+            <legend class="form__legend">Waar en met hoeveel?</legend>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-n">Aantal personen</label>
+                <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+              </div>
+              <div class="field">
+                <label for="f-place">Plaats van het feest</label>
+                <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+              </div>
             </div>
             <div class="field">
-              <label for="f-place">Plaats van het feest</label>
-              <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+              <label for="f-msg">Nog iets wat Jan moet weten? <span class="opt">(optioneel)</span></label>
+              <textarea id="f-msg" name="Bericht" rows="3" placeholder="Bijv. een thema, alcoholvrije gasten of een verrassing voor de bruid"></textarea>
             </div>
-          </div>
+            <div class="form__nav"><button type="button" class="form__back" data-back>← Terug</button><button type="button" class="btn btn--gold btn--lg" data-next>Volgende stap <span aria-hidden="true">→</span></button></div>
+          </fieldset>
 
-          <div class="form__row">
+          <fieldset class="form__step" data-step="3">
+            <legend class="form__legend">Waar mag Jan het voorstel naartoe sturen?</legend>
+            <p class="form__summary" id="form-summary"></p>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-name">Naam</label>
+                <input type="text" id="f-name" name="Naam" autocomplete="name" required>
+              </div>
+              <div class="field">
+                <label for="f-phone">Telefoon <span class="opt">(optioneel)</span></label>
+                <input type="tel" id="f-phone" name="Telefoon" autocomplete="tel">
+              </div>
+            </div>
             <div class="field">
-              <label for="f-name">Naam</label>
-              <input type="text" id="f-name" name="Naam" autocomplete="name" required>
+              <label for="f-mail">E-mailadres</label>
+              <input type="email" id="f-mail" name="email" autocomplete="email" required>
             </div>
-            <div class="field">
-              <label for="f-phone">Telefoon <span class="opt">(optioneel)</span></label>
-              <input type="tel" id="f-phone" name="Telefoon" autocomplete="tel">
-            </div>
-          </div>
+            <div class="form__nav"><button type="button" class="form__back" data-back>← Terug</button><button type="submit" class="btn btn--gold btn--lg">Verstuur aanvraag <span aria-hidden="true">→</span></button></div>
+          </fieldset>
 
-          <div class="field">
-            <label for="f-mail">E-mailadres</label>
-            <input type="email" id="f-mail" name="email" autocomplete="email" required>
-          </div>
-
-          <div class="field">
-            <label for="f-msg">Nog iets wat Jan moet weten? <span class="opt">(optioneel)</span></label>
-            <textarea id="f-msg" name="Bericht" rows="3" placeholder="Bijv. een thema, alcoholvrije gasten of een verrassing voor de bruid"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn--gold btn--lg btn--block">Verstuur aanvraag <span aria-hidden="true">→</span></button>
           <p class="form__legal">Vrijblijvend. We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Zie de <a href="privacy.html">privacyverklaring</a>.</p>
           <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
         </form>
@@ -596,16 +613,28 @@
         </ul>
       </div>
       <div>
-        <h4>Contact</h4>
+        <h4>Regio</h4>
         <ul>
+          <li><a href="cocktailworkshop-alkmaar/">Cocktailworkshop Alkmaar</a></li>
+          <li><a href="cocktailworkshop-heerhugowaard/">Cocktailworkshop Heerhugowaard</a></li>
+          <li><a href="cocktailworkshop-hoorn/">Cocktailworkshop Hoorn</a></li>
+          <li><a href="cocktailworkshop-schagen/">Cocktailworkshop Schagen</a></li>
+          <li><a href="cocktailworkshop-castricum/">Cocktailworkshop Castricum</a></li>
+          <li><a href="cocktailworkshop-purmerend/">Cocktailworkshop Purmerend</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Meer</h4>
+        <ul>
+          <li><a href="recepten/">Cocktailrecepten</a></li>
           <li><a href="#" data-whatsapp target="_blank" rel="noopener">WhatsApp</a></li>
           <li><a href="mailto:info@shakebyjan.nl">info@shakebyjan.nl</a></li>
-          <li><a href="#werkgebied">Regio Heerhugowaard (30 km)</a></li>
+          <li><a href="#werkgebied">Werkgebied (30 km)</a></li>
         </ul>
       </div>
     </div>
     <div class="container footer__bottom">
-      <p>© <span id="year">2026</span> Shake by Jan · KvK 00000000 · <a href="privacy.html">Privacy</a></p>
+      <p>© <span id="year">2026</span> Shake by Jan · KvK 00000000 · <a href="privacy.html">Privacy</a> · <a href="#" data-cookie-settings>Cookie-instellingen</a></p>
       <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
     </div>
   </footer>

@@ -8,12 +8,32 @@
   var PRICE_PP = 30;
   var FALLBACK_EMAIL = "info@shakebyjan.nl";
 
-  var doc = document.documentElement;
-  doc.classList.remove("no-js");
+  document.documentElement.classList.remove("no-js");
 
-  // ===== WhatsApp-links =====
+  // Metingen lopen via js/consent.js (Consent Mode); zonder dat script gebeurt er niets
+  function track(name, params) {
+    if (typeof window.sbjTrack === "function") window.sbjTrack(name, params);
+  }
+
+  // ===== Datumhulpjes =====
+  var today = new Date();
+  var dayFmt = new Intl.DateTimeFormat("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function fromIso(s) { var p = s.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); }
+  var todayIso = iso(today);
+
+  var year = document.getElementById("year");
+  if (year) year.textContent = today.getFullYear();
+
+  // ===== WhatsApp- en maillinks =====
   var waUrl = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(WHATSAPP_TEXT);
-  document.querySelectorAll("[data-whatsapp]").forEach(function (a) { a.href = waUrl; });
+  document.querySelectorAll("[data-whatsapp]").forEach(function (a) {
+    a.href = waUrl;
+    a.addEventListener("click", function () { track("click_whatsapp", { link_location: a.className.split(" ")[0] || "link" }); });
+  });
+  document.querySelectorAll('a[href^="mailto:"]').forEach(function (a) {
+    a.addEventListener("click", function () { track("click_email"); });
+  });
 
   // ===== Header-achtergrond + mobiele CTA-balk =====
   var header = document.querySelector(".header");
@@ -22,8 +42,9 @@
   function onScroll() {
     var y = window.scrollY;
     header.classList.toggle("is-scrolled", y > 30);
-    var bookingTop = booking.getBoundingClientRect().top;
-    var bookingVisible = bookingTop < window.innerHeight && booking.getBoundingClientRect().bottom > 0;
+    if (!mobilebar) return;
+    var r = booking ? booking.getBoundingClientRect() : null;
+    var bookingVisible = r ? r.top < window.innerHeight && r.bottom > 0 : false;
     mobilebar.classList.toggle("is-visible", y > 600 && !bookingVisible);
   }
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -69,23 +90,149 @@
     reveals.forEach(function (el) { el.classList.add("is-in"); });
   }
 
-  // ===== Formulier-velden =====
+  // ===== Aanvraagformulier in stappen =====
   var form = document.getElementById("form");
+  if (!form) return; // pagina's zonder formulier (recepten) zijn hier klaar
+
   var fOcc = document.getElementById("f-occ");
-  var fN = document.getElementById("f-n");
+  var fType = document.getElementById("f-type");
   var fDate = document.getElementById("f-date");
+  var fPart = document.getElementById("f-part");
+  var fN = document.getElementById("f-n");
+  var fPlace = document.getElementById("f-place");
+  var status = document.getElementById("form-status");
+  var summary = document.getElementById("form-summary");
+  var steps = Array.prototype.slice.call(form.querySelectorAll(".form__step"));
+  var progress = form.querySelectorAll(".form__progress li");
+  var current = 0;
+  var started = false;
 
-  var today = new Date();
-  fDate.min = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  document.getElementById("year").textContent = today.getFullYear();
+  fDate.min = todayIso;
 
-  // Kaart-links vullen de gelegenheid alvast in
-  document.querySelectorAll("[data-occasion]").forEach(function (a) {
-    a.addEventListener("click", function () { fOcc.value = a.getAttribute("data-occasion"); });
+  function setStatus(msg, isError) {
+    status.innerHTML = msg || "";
+    status.className = "form__status" + (isError ? " is-error" : "");
+  }
+
+  function stepValid(i, focus) {
+    var ok = true;
+    steps[i].querySelectorAll("[required]").forEach(function (el) {
+      var valid = el.checkValidity();
+      el.closest(".field").classList.toggle("is-invalid", !valid);
+      if (!valid && ok) {
+        ok = false;
+        if (focus) el.focus();
+      }
+    });
+    return ok;
+  }
+
+  function updateSummary() {
+    var parts = [
+      fOcc.value,
+      fType.value,
+      fDate.value ? dayFmt.format(fromIso(fDate.value)) : "",
+      fPart.value && fPart.value !== "Weet ik nog niet" ? fPart.value.toLowerCase() : "",
+      fN.value ? fN.value + " personen" : "",
+      fPlace.value,
+    ].filter(Boolean);
+    summary.textContent = parts.join(" · ");
+  }
+
+  function goToStep(i, focus) {
+    current = i;
+    steps.forEach(function (s, n) { s.classList.toggle("is-active", n === i); });
+    progress.forEach(function (li, n) {
+      li.classList.toggle("is-active", n === i);
+      li.classList.toggle("is-done", n < i);
+    });
+    if (i === steps.length - 1) updateSummary();
+    if (focus) {
+      var first = steps[i].querySelector("select, input:not([type=hidden]):not(.hp), textarea");
+      if (first) first.focus({ preventScroll: true });
+    }
+    track("form_step", { step: i + 1 });
+  }
+
+  function next() {
+    setStatus("");
+    if (stepValid(current, true)) goToStep(current + 1, true);
+    else setStatus("Vul de gemarkeerde velden nog even in.", true);
+  }
+
+  form.addEventListener("click", function (e) {
+    if (e.target.closest("[data-next]")) next();
+    else if (e.target.closest("[data-back]")) { setStatus(""); goToStep(current - 1, true); }
+  });
+
+  // Enter in een tussenstap gaat naar de volgende stap in plaats van te versturen
+  form.addEventListener("keydown", function (e) {
+    var tag = e.target.tagName;
+    if (e.key === "Enter" && tag !== "TEXTAREA" && tag !== "BUTTON" && current < steps.length - 1) {
+      e.preventDefault();
+      next();
+    }
+  });
+
+  form.addEventListener("input", function (e) {
+    if (!started) { started = true; track("form_start"); }
+    var field = e.target.closest(".field");
+    if (field && e.target.checkValidity()) field.classList.remove("is-invalid");
+  });
+
+  function showDone() {
+    form.innerHTML =
+      '<div class="form__done"><h3>Proost, <em>bedankt!</em></h3>' +
+      "<p>Je aanvraag is binnen. Jan neemt zo snel mogelijk contact met je op met een voorstel op maat.</p>" +
+      '<a class="btn btn--dark" href="' + waUrl + '" target="_blank" rel="noopener">Of app Jan direct</a></div>';
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    setStatus("");
+    for (var i = 0; i < steps.length; i++) {
+      if (!stepValid(i, false)) {
+        goToStep(i, false);
+        stepValid(i, true);
+        setStatus("Vul de gemarkeerde velden nog even in.", true);
+        return;
+      }
+    }
+
+    var data = new FormData(form);
+    var key = data.get("access_key") || "";
+    var leadParams = { value: +fN.value * PRICE_PP, currency: "EUR", occasion: fOcc.value, service: fType.value };
+
+    if (key.indexOf("JOUW") === 0) {
+      // Nog geen Web3Forms-key ingesteld: open de mail-app met de ingevulde gegevens
+      var lines = [];
+      data.forEach(function (v, k) { if (["access_key", "subject", "botcheck"].indexOf(k) === -1 && v) lines.push(k + ": " + v); });
+      track("lead_mailto", leadParams);
+      window.location.href = "mailto:" + FALLBACK_EMAIL + "?subject=" + encodeURIComponent("Aanvraag cocktailworkshop") + "&body=" + encodeURIComponent(lines.join("\n"));
+      return;
+    }
+
+    var btn = form.querySelector("button[type='submit']");
+    btn.disabled = true;
+    btn.textContent = "Versturen…";
+    fetch("https://api.web3forms.com/submit", { method: "POST", body: data, headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.success) throw new Error(res.message);
+        track("generate_lead", leadParams);
+        showDone();
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.innerHTML = 'Verstuur aanvraag <span aria-hidden="true">→</span>';
+        setStatus('Er ging iets mis bij het versturen. Probeer het opnieuw of <a href="' + waUrl + '" target="_blank" rel="noopener">app Jan direct</a>.', true);
+      });
   });
 
   // ===== Prijscalculator =====
   var range = document.getElementById("calc-n");
+  if (!range) return;
+
   var out = document.getElementById("calc-n-out");
   var total = document.getElementById("calc-total");
   var fmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -105,19 +252,14 @@
   var calPrev = document.querySelector(".cal__nav[data-dir='-1']");
   var calNext = document.querySelector(".cal__nav[data-dir='1']");
   var calCta = document.getElementById("calc-cta");
-  var fPart = document.getElementById("f-part");
   var MAX_MONTHS_AHEAD = 18;
   var startMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   var view = startMonth;
   var selected = null; // "JJJJ-MM-DD"
   var monthFmt = new Intl.DateTimeFormat("nl-NL", { month: "long", year: "numeric" });
-  var dayFmt = new Intl.DateTimeFormat("nl-NL", { weekday: "short", day: "numeric", month: "short" });
   var fullFmt = new Intl.DateTimeFormat("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-  function fromIso(s) { var p = s.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); }
   function monthsFromStart(d) { return (d.getFullYear() - startMonth.getFullYear()) * 12 + d.getMonth() - startMonth.getMonth(); }
-  var todayIso = iso(today);
 
   function renderCal() {
     calMonth.textContent = monthFmt.format(view);
@@ -167,7 +309,7 @@
   renderCal();
   updateCta();
 
-  // Keuzes uit de calculator meenemen naar het formulier
+  // Keuzes uit de calculator meenemen naar het formulier; is stap 1 dan compleet, direct door naar stap 2
   calCta.addEventListener("click", function () {
     var occ = document.querySelector("input[name='calc-occ']:checked");
     if (occ) fOcc.value = occ.value;
@@ -175,75 +317,12 @@
     if (selected) fDate.value = selected;
     if (currentPart()) fPart.value = currentPart();
     var calcEl = document.querySelector(".calc");
-    if (calcEl && calcEl.getAttribute("data-type")) document.getElementById("f-type").value = calcEl.getAttribute("data-type");
+    if (calcEl && calcEl.getAttribute("data-type")) fType.value = calcEl.getAttribute("data-type");
     form.querySelectorAll(".field.is-invalid").forEach(function (f) {
       var el = f.querySelector("input, select");
       if (el && el.checkValidity()) f.classList.remove("is-invalid");
     });
-  });
-
-  // ===== Verzenden (Web3Forms, met mailto-terugval zolang er geen key is) =====
-  var status = document.getElementById("form-status");
-
-  function validate() {
-    var ok = true;
-    form.querySelectorAll("[required]").forEach(function (el) {
-      var valid = el.checkValidity();
-      el.closest(".field").classList.toggle("is-invalid", !valid);
-      if (!valid && ok) { el.focus(); ok = false; }
-    });
-    return ok;
-  }
-
-  form.addEventListener("input", function (e) {
-    var field = e.target.closest(".field");
-    if (field && e.target.checkValidity()) field.classList.remove("is-invalid");
-  });
-
-  function showDone() {
-    form.innerHTML =
-      '<div class="form__done"><h3>Proost, <em>bedankt!</em></h3>' +
-      "<p>Je aanvraag is binnen. Jan neemt zo snel mogelijk contact met je op met een voorstel op maat.</p>" +
-      '<a class="btn btn--dark" href="' + waUrl + '" target="_blank" rel="noopener">Of app Jan direct</a></div>';
-  }
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    status.textContent = "";
-    status.className = "form__status";
-    if (!validate()) {
-      status.textContent = "Vul de gemarkeerde velden nog even in.";
-      status.classList.add("is-error");
-      return;
-    }
-
-    var data = new FormData(form);
-    var key = data.get("access_key") || "";
-
-    if (key.indexOf("JOUW") === 0) {
-      // Nog geen Web3Forms-key ingesteld: open de mail-app met de ingevulde gegevens
-      var lines = [];
-      data.forEach(function (v, k) { if (["access_key", "subject", "botcheck"].indexOf(k) === -1 && v) lines.push(k + ": " + v); });
-      window.location.href = "mailto:" + FALLBACK_EMAIL + "?subject=" + encodeURIComponent("Aanvraag cocktailworkshop") + "&body=" + encodeURIComponent(lines.join("\n"));
-      return;
-    }
-
-    var btn = form.querySelector("button[type='submit']");
-    btn.disabled = true;
-    btn.textContent = "Versturen…";
-    fetch("https://api.web3forms.com/submit", { method: "POST", body: data, headers: { Accept: "application/json" } })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        if (res.success) {
-          showDone();
-          if (typeof window.gtag === "function") window.gtag("event", "generate_lead", { value: +fN.value * PRICE_PP, currency: "EUR" });
-        } else { throw new Error(res.message); }
-      })
-      .catch(function () {
-        btn.disabled = false;
-        btn.innerHTML = 'Verstuur aanvraag <span aria-hidden="true">→</span>';
-        status.innerHTML = 'Er ging iets mis bij het versturen. Probeer het opnieuw of <a href="' + waUrl + '" target="_blank" rel="noopener">app Jan direct</a>.';
-        status.classList.add("is-error");
-      });
+    track("calc_request", { persons: +range.value, date: selected || "", daypart: currentPart() });
+    if (current === 0 && stepValid(0, false)) goToStep(1, false);
   });
 })();

@@ -8,7 +8,16 @@ Statische HTML/CSS/JS, geen build-stap.
 - `css/style.css`, `js/main.js`
 - Landingspagina's per activiteit: `/cocktailworkshop/`, `/cocktailfeest/`, `/vrijgezellenfeest/`, `/vriendenuitje/`, `/bedrijfsuitje/`
 - **Bouwen:** `node tools/build.js` genereert de landingspagina's uit `tools/pages.js` en zet de gedeelde onderdelen (header/menu, calculator met agenda, foto van Jan, formulier, footer) in `index.html` tussen de `<!-- build:... -->` markers. Pas tekst van landingspagina's aan in `tools/pages.js` en gedeelde onderdelen in `tools/build.js`, niet in de gegenereerde HTML. Draai daarna opnieuw.
+- Stadspagina's (`tools/cities.js`): Alkmaar, Heerhugowaard, Hoorn, Schagen, Castricum, Purmerend → `/cocktailworkshop-<stad>/`
+- Recepten (`tools/recipes.js`): overzicht op `/recepten/`, 6 recepten op `/recepten/<slug>/` met schema.org Recipe
+- Aanvraagformulier in 3 stappen (wat & wanneer → groep & plek → gegevens); de calculator vult stap 1 en springt door naar stap 2
 - Foto van Jan: zet hem als `assets/jan-berkhout.jpg` neer en draai de build; de placeholder wordt dan overal vervangen.
+
+## Metingen (GA4 + Google Ads)
+
+`js/consent.js` regelt cookietoestemming (Google Consent Mode v2, standaard alles geweigerd), laadt gtag.js en verstuurt events. Vul bovenin `GA4_ID`, `ADS_ID` en `ADS_LEAD_LABEL` in; zolang het placeholders zijn wordt er niets geladen en verschijnt er geen banner. Banner bekijken zonder ID's: voeg `?cookiebanner` aan de URL toe.
+
+Events: `generate_lead` (aanvraag verstuurd, met waarde = personen × €30; triggert ook de Google Ads-conversie), `lead_mailto` (zolang Web3Forms nog niet is ingesteld), `form_start`, `form_step`, `calc_request`, `click_whatsapp`, `click_email`. Markeer in GA4 `generate_lead` als belangrijke gebeurtenis.
 - Lokale preview: `node tools/serve.js 8767` → http://localhost:8767
 - Live (GitHub Pages, deployt automatisch bij elke push naar `main`): https://laurens-commits.github.io/shake-by-jan/
 

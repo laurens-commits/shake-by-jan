@@ -1,10 +1,12 @@
 // Bouwt de site: gedeelde onderdelen (header, calculator, foto, formulier, footer)
-// worden in index.html gezet tussen <!-- build:naam --> markers, en per activiteit
-// wordt een landingspagina gegenereerd in /<slug>/index.html.
+// worden in index.html gezet tussen <!-- build:naam --> markers, en er worden
+// landingspagina's (activiteiten), stadspagina's en receptpagina's gegenereerd.
 // Gebruik: node tools/build.js
 const fs = require("fs");
 const path = require("path");
 const pages = require("./pages");
+const cities = require("./cities");
+const recipes = require("./recipes");
 
 const ROOT = path.join(__dirname, "..");
 const SITE = "https://www.shakebyjan.nl/";
@@ -14,18 +16,22 @@ const ARROW = '<span aria-hidden="true">→</span>';
 const WA_PATH = "M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z";
 const WA_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${WA_PATH}"/></svg>`;
 const LOGO_MARK = '<span class="logo__mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 7h20l-10 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 18v8M11 26h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="23" cy="6" r="3.2" fill="currentColor"/></svg></span>';
+const GEO = { "@type": "GeoCircle", geoMidpoint: { "@type": "GeoCoordinates", latitude: 52.6667, longitude: 4.8306 }, geoRadius: "30000" };
+const PROVIDER = { "@type": "LocalBusiness", name: "Shake by Jan", url: SITE, address: { "@type": "PostalAddress", addressLocality: "Heerhugowaard", addressCountry: "NL" } };
 
 const pad = (n) => String(n).padStart(2, "0");
 const strip = (html) => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&");
+const esc = (s) => s.replace(/&(?!amp;|#)/g, "&amp;").replace(/"/g, "&quot;");
 
 // ---------- Gedeelde onderdelen ----------
 
-function header(base, current = "") {
+function header(base, current = "", cta = "#aanvragen") {
   const home = base || "";
   const items = pages.map((p, i) => `            <a href="${base}${p.slug}/" class="nav__item"${p.slug === current ? ' aria-current="page"' : ""}>
               <span class="nav__num">${pad(i + 1)}</span>
               <span><strong>${p.navLabel}</strong><small>${p.navSub}</small></span>
             </a>`).join("\n");
+  const inActivities = pages.some((p) => p.slug === current);
   return `  <header class="header" id="top">
     <div class="container header__inner">
       <a href="${base || "#top"}" class="logo" aria-label="Shake by Jan – naar de homepage">
@@ -34,7 +40,7 @@ function header(base, current = "") {
       </a>
       <nav class="nav" id="nav" aria-label="Hoofdmenu">
         <div class="nav__group">
-          <button type="button" class="nav__drop" aria-expanded="false" aria-controls="nav-panel"${current ? " aria-current=\"true\"" : ""}>Activiteiten <svg class="nav__chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5"/></svg></button>
+          <button type="button" class="nav__drop" aria-expanded="false" aria-controls="nav-panel"${inActivities ? ' aria-current="true"' : ""}>Activiteiten <svg class="nav__chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5"/></svg></button>
           <p class="nav__label">Activiteiten</p>
           <div class="nav__panel" id="nav-panel">
 ${items}
@@ -44,10 +50,11 @@ ${items}
           <a href="${home}#prijs" class="nav__link">Prijs</a>
           <a href="${home}#jan" class="nav__link">Over Jan</a>
           <a href="${home}#werkgebied" class="nav__link">Werkgebied</a>
+          <a href="${base}recepten/" class="nav__link"${current === "recepten" ? ' aria-current="page"' : ""}>Recepten</a>
           <a href="${home}#faq" class="nav__link">Vragen</a>
         </div>
         <div class="nav__foot">
-          <a href="#aanvragen" class="btn btn--gold nav__cta">Check beschikbaarheid</a>
+          <a href="${cta}" class="btn btn--gold nav__cta">Check beschikbaarheid</a>
           <a href="#" class="nav__wa" data-whatsapp target="_blank" rel="noopener">${WA_ICON} WhatsApp Jan</a>
         </div>
       </nav>
@@ -123,83 +130,100 @@ function form(base, { occasion = "", type = "Cocktailworkshop" } = {}) {
   const opt = (v, sel) => `<option${v === sel ? " selected" : ""}>${v}</option>`;
   const occs = ["Vriendengroep", "Vrijgezellenfeest", "Bedrijfsfeest", "Verjaardag of jubileum", "Bruiloft", "Anders"];
   const types = ["Cocktailworkshop", "Cocktailbar op locatie", "Weet ik nog niet"];
+  const next = `<button type="button" class="btn btn--gold btn--lg" data-next>Volgende stap ${ARROW}</button>`;
+  const back = `<button type="button" class="form__back" data-back>← Terug</button>`;
   return `<form class="form reveal" id="form" novalidate>
           <input type="hidden" name="access_key" value="JOUW-WEB3FORMS-KEY">
           <input type="hidden" name="subject" value="Nieuwe aanvraag via shakebyjan.nl">
           <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-occ">Gelegenheid</label>
-              <select id="f-occ" name="Gelegenheid" required>
-                <option value="">Kies…</option>
-                ${occs.map((o) => opt(o, occasion)).join("\n                ")}
-              </select>
-            </div>
-            <div class="field">
-              <label for="f-type">Wat zoek je?</label>
-              <select id="f-type" name="Type">
-                ${types.map((t) => opt(t, type)).join("\n                ")}
-              </select>
-            </div>
-          </div>
+          <ol class="form__progress" aria-hidden="true">
+            <li class="is-active"><span>1</span>Wat &amp; wanneer</li>
+            <li><span>2</span>Groep &amp; plek</li>
+            <li><span>3</span>Gegevens</li>
+          </ol>
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-date">Datum</label>
-              <input type="date" id="f-date" name="Datum" required>
+          <fieldset class="form__step is-active" data-step="1">
+            <legend class="form__legend">Wat wil je organiseren?</legend>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-occ">Gelegenheid</label>
+                <select id="f-occ" name="Gelegenheid" required>
+                  <option value="">Kies…</option>
+                  ${occs.map((o) => opt(o, occasion)).join("\n                  ")}
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-type">Wat zoek je?</label>
+                <select id="f-type" name="Type">
+                  ${types.map((t) => opt(t, type)).join("\n                  ")}
+                </select>
+              </div>
             </div>
-            <div class="field">
-              <label for="f-part">Dagdeel</label>
-              <select id="f-part" name="Dagdeel" required>
-                <option value="">Kies…</option>
-                <option>Ochtend</option>
-                <option>Middag</option>
-                <option>Avond</option>
-                <option>Weet ik nog niet</option>
-              </select>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-date">Datum</label>
+                <input type="date" id="f-date" name="Datum" required>
+              </div>
+              <div class="field">
+                <label for="f-part">Dagdeel</label>
+                <select id="f-part" name="Dagdeel" required>
+                  <option value="">Kies…</option>
+                  <option>Ochtend</option>
+                  <option>Middag</option>
+                  <option>Avond</option>
+                  <option>Weet ik nog niet</option>
+                </select>
+              </div>
             </div>
-          </div>
+            <div class="form__nav form__nav--first">${next}</div>
+          </fieldset>
 
-          <div class="form__row">
-            <div class="field">
-              <label for="f-n">Aantal personen</label>
-              <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+          <fieldset class="form__step" data-step="2">
+            <legend class="form__legend">Waar en met hoeveel?</legend>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-n">Aantal personen</label>
+                <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+              </div>
+              <div class="field">
+                <label for="f-place">Plaats van het feest</label>
+                <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+              </div>
             </div>
             <div class="field">
-              <label for="f-place">Plaats van het feest</label>
-              <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+              <label for="f-msg">Nog iets wat Jan moet weten? <span class="opt">(optioneel)</span></label>
+              <textarea id="f-msg" name="Bericht" rows="3" placeholder="Bijv. een thema, alcoholvrije gasten of een verrassing voor de bruid"></textarea>
             </div>
-          </div>
+            <div class="form__nav">${back}${next}</div>
+          </fieldset>
 
-          <div class="form__row">
+          <fieldset class="form__step" data-step="3">
+            <legend class="form__legend">Waar mag Jan het voorstel naartoe sturen?</legend>
+            <p class="form__summary" id="form-summary"></p>
+            <div class="form__row">
+              <div class="field">
+                <label for="f-name">Naam</label>
+                <input type="text" id="f-name" name="Naam" autocomplete="name" required>
+              </div>
+              <div class="field">
+                <label for="f-phone">Telefoon <span class="opt">(optioneel)</span></label>
+                <input type="tel" id="f-phone" name="Telefoon" autocomplete="tel">
+              </div>
+            </div>
             <div class="field">
-              <label for="f-name">Naam</label>
-              <input type="text" id="f-name" name="Naam" autocomplete="name" required>
+              <label for="f-mail">E-mailadres</label>
+              <input type="email" id="f-mail" name="email" autocomplete="email" required>
             </div>
-            <div class="field">
-              <label for="f-phone">Telefoon <span class="opt">(optioneel)</span></label>
-              <input type="tel" id="f-phone" name="Telefoon" autocomplete="tel">
-            </div>
-          </div>
+            <div class="form__nav">${back}<button type="submit" class="btn btn--gold btn--lg">Verstuur aanvraag ${ARROW}</button></div>
+          </fieldset>
 
-          <div class="field">
-            <label for="f-mail">E-mailadres</label>
-            <input type="email" id="f-mail" name="email" autocomplete="email" required>
-          </div>
-
-          <div class="field">
-            <label for="f-msg">Nog iets wat Jan moet weten? <span class="opt">(optioneel)</span></label>
-            <textarea id="f-msg" name="Bericht" rows="3" placeholder="Bijv. een thema, alcoholvrije gasten of een verrassing voor de bruid"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn--gold btn--lg btn--block">Verstuur aanvraag ${ARROW}</button>
           <p class="form__legal">Vrijblijvend. We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Zie de <a href="${base}privacy.html">privacyverklaring</a>.</p>
           <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
         </form>`;
 }
 
-function footer(base) {
+function footer(base, cta = "#aanvragen") {
   const home = base || "";
   return `  <footer class="footer">
     <div class="container footer__grid">
@@ -217,16 +241,23 @@ ${pages.map((p) => `          <li><a href="${base}${p.slug}/">${p.navLabel}</a><
         </ul>
       </div>
       <div>
-        <h4>Contact</h4>
+        <h4>Regio</h4>
         <ul>
+${cities.map((c) => `          <li><a href="${base}${c.slug}/">Cocktailworkshop ${c.name}</a></li>`).join("\n")}
+        </ul>
+      </div>
+      <div>
+        <h4>Meer</h4>
+        <ul>
+          <li><a href="${base}recepten/">Cocktailrecepten</a></li>
           <li><a href="#" data-whatsapp target="_blank" rel="noopener">WhatsApp</a></li>
           <li><a href="mailto:info@shakebyjan.nl">info@shakebyjan.nl</a></li>
-          <li><a href="${home}#werkgebied">Regio Heerhugowaard (30 km)</a></li>
+          <li><a href="${home}#werkgebied">Werkgebied (30 km)</a></li>
         </ul>
       </div>
     </div>
     <div class="container footer__bottom">
-      <p>© <span id="year">2026</span> Shake by Jan · KvK 00000000 · <a href="${base}privacy.html">Privacy</a></p>
+      <p>© <span id="year">2026</span> Shake by Jan · KvK 00000000 · <a href="${base}privacy.html">Privacy</a> · <a href="#" data-cookie-settings>Cookie-instellingen</a></p>
       <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
     </div>
   </footer>
@@ -236,7 +267,7 @@ ${pages.map((p) => `          <li><a href="${base}${p.slug}/">${p.navLabel}</a><
     <div><small>Cocktailworkshop</small><strong>vanaf €30 p.p.</strong></div>
     <div class="mobilebar__actions">
       <a class="mobilebar__wa" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht">${WA_ICON}</a>
-      <a href="#aanvragen" class="btn btn--gold">Aanvragen</a>
+      <a href="${cta}" class="btn btn--gold">Aanvragen</a>
     </div>
   </div>
 
@@ -279,7 +310,116 @@ function heroVisual(small, big) {
         </div>`;
 }
 
-// ---------- Landingspagina ----------
+function crumbs(items) {
+  return `<nav class="crumbs reveal" aria-label="Kruimelpad">${items
+    .map(([label, href]) => (href ? `<a href="${href}">${label}</a>` : `<span aria-current="page">${label}</span>`))
+    .join('<span aria-hidden="true">/</span>')}</nav>`;
+}
+
+function breadcrumbLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map(([name, url], i) => ({ "@type": "ListItem", position: i + 1, name, item: url })),
+  };
+}
+
+function faqLd(faq) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: strip(a) } })),
+  };
+}
+
+function faqSection(title, faq, soft = false) {
+  return `    <section class="section ${soft ? "section--soft" : "section--cream"}" id="faq">
+      <div class="container faq">
+        <div class="section__head section__head--left reveal">
+          <p class="eyebrow eyebrow--dark">Veelgestelde vragen</p>
+          <h2>${title}</h2>
+          <p class="section__lead">Staat je vraag er niet tussen? Stuur Jan een berichtje via WhatsApp of het aanvraagformulier.</p>
+        </div>
+        <div class="faq__list">
+${faq.map(([q, a], i) => `          <details class="reveal"${i === 0 ? " open" : ""}>
+            <summary>${q}</summary>
+            <p>${a}</p>
+          </details>`).join("\n")}
+        </div>
+      </div>
+    </section>`;
+}
+
+function bookingSection(base, { h2, lead, bar = false, occasion = "", type = "Cocktailworkshop" }) {
+  return `    <section class="section section--dark cta-section" id="aanvragen">
+      <div class="hero__glow hero__glow--low" aria-hidden="true"></div>
+      <div class="container booking">
+        <div class="booking__copy reveal">
+          <p class="eyebrow">Vrijblijvend aanvragen</p>
+          <h2>${h2}</h2>
+          <p class="section__lead section__lead--light">${lead}</p>
+          <ul class="ticks ticks--light">
+            <li>${bar ? "Vaste prijs vooraf" : "Vanaf €30 p.p. all-in"}</li>
+            <li>Vrijblijvend, je zit nergens aan vast</li>
+            <li>Persoonlijk contact met Jan zelf</li>
+          </ul>
+          <a class="btn btn--whatsapp btn--lg" data-whatsapp href="#" target="_blank" rel="noopener">${WA_ICON} App Jan direct</a>
+        </div>
+
+        ${form(base, { occasion, type })}
+      </div>
+    </section>`;
+}
+
+function head({ base, title, description, url, ld = [], type = "website" }) {
+  return `<!DOCTYPE html>
+<html lang="nl" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${esc(title)}</title>
+  <meta name="description" content="${esc(description)}">
+  <link rel="canonical" href="${url}">
+  <meta name="theme-color" content="#110e0b">
+  <link rel="icon" href="${base}assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="${type}">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:title" content="${esc(title)}">
+  <meta property="og:description" content="${esc(description)}">
+  <meta property="og:url" content="${url}">
+  <script src="${base}js/consent.js" data-privacy="${base}privacy.html"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="${base}css/style.css">
+${ld.map((o) => `  <script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n")}
+</head>`;
+}
+
+function shell({ base, current = "", cta = "#aanvragen", headOpts, main }) {
+  return `${head({ base, ...headOpts })}
+<body>
+  <a class="skip" href="#main">Naar inhoud</a>
+
+<!-- build:header -->
+${header(base, current, cta)}
+<!-- /build:header -->
+
+  <main id="main">
+${main}
+  </main>
+
+<!-- build:footer -->
+${footer(base, cta)}
+<!-- /build:footer -->
+
+  <script src="${base}js/main.js" defer></script>
+</body>
+</html>
+`;
+}
+
+// ---------- Landingspagina (activiteit) ----------
 
 function landing(p) {
   const base = "../";
@@ -294,59 +434,19 @@ function landing(p) {
       serviceType: p.navLabel,
       description: p.description,
       url,
-      areaServed: { "@type": "GeoCircle", geoMidpoint: { "@type": "GeoCoordinates", latitude: 52.6667, longitude: 4.8306 }, geoRadius: "30000" },
-      provider: { "@type": "LocalBusiness", name: "Shake by Jan", url: SITE, address: { "@type": "PostalAddress", addressLocality: "Heerhugowaard", addressCountry: "NL" } },
+      areaServed: GEO,
+      provider: PROVIDER,
       ...(bar ? {} : { offers: { "@type": "Offer", price: "30", priceCurrency: "EUR", description: "Vanaf €30 per persoon, all-in" } }),
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: p.faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: strip(a) } })),
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: SITE },
-        { "@type": "ListItem", position: 2, name: p.navLabel, item: url },
-      ],
-    },
+    faqLd(p.faq),
+    breadcrumbLd([["Home", SITE], [p.navLabel, url]]),
   ];
 
-  return `<!DOCTYPE html>
-<html lang="nl" class="no-js">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${p.title.replace(/&(?!amp;)/g, "&amp;")}</title>
-  <meta name="description" content="${p.description}">
-  <link rel="canonical" href="${url}">
-  <meta name="theme-color" content="#110e0b">
-  <link rel="icon" href="${base}assets/favicon.svg" type="image/svg+xml">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="nl_NL">
-  <meta property="og:title" content="${p.title.replace(/&(?!amp;)/g, "&amp;")}">
-  <meta property="og:description" content="${p.description}">
-  <meta property="og:url" content="${url}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="${base}css/style.css">
-  <script type="application/ld+json">${JSON.stringify(ld)}</script>
-</head>
-<body>
-  <a class="skip" href="#main">Naar inhoud</a>
-
-<!-- build:header -->
-${header(base, p.slug)}
-<!-- /build:header -->
-
-  <main id="main">
-    <section class="hero hero--page">
+  const main = `    <section class="hero hero--page">
       <div class="hero__glow" aria-hidden="true"></div>
       <div class="container hero__grid">
         <div class="hero__copy">
-          <nav class="crumbs reveal" aria-label="Kruimelpad"><a href="${base}">Home</a><span aria-hidden="true">/</span><span aria-current="page">${p.navLabel}</span></nav>
+          ${crumbs([["Home", base], [p.navLabel]])}
           <p class="eyebrow reveal">${p.hero.eyebrow}</p>
           <h1 class="hero__title hero__title--page reveal">${p.hero.h1}</h1>
           <p class="hero__lead reveal">${p.hero.lead}</p>
@@ -420,21 +520,7 @@ ${p.program.note ? `        <p class="steps__note">${p.program.note}</p>` : ""}
       </div>
     </section>
 
-    <section class="section section--cream" id="faq">
-      <div class="container faq">
-        <div class="section__head section__head--left reveal">
-          <p class="eyebrow eyebrow--dark">Veelgestelde vragen</p>
-          <h2>${p.faqTitle}</h2>
-          <p class="section__lead">Staat je vraag er niet tussen? Stuur Jan een berichtje via WhatsApp of het aanvraagformulier.</p>
-        </div>
-        <div class="faq__list">
-${p.faq.map(([q, a], i) => `          <details class="reveal"${i === 0 ? " open" : ""}>
-            <summary>${q}</summary>
-            <p>${a}</p>
-          </details>`).join("\n")}
-        </div>
-      </div>
-    </section>
+${faqSection(p.faqTitle, p.faq)}
 
     <section class="section section--soft">
       <div class="container">
@@ -448,34 +534,273 @@ ${others.map((o) => `          <a class="reveal" href="${base}${o.slug}/"><stron
       </div>
     </section>
 
-    <section class="section section--dark cta-section" id="aanvragen">
-      <div class="hero__glow hero__glow--low" aria-hidden="true"></div>
-      <div class="container booking">
-        <div class="booking__copy reveal">
-          <p class="eyebrow">Vrijblijvend aanvragen</p>
-          <h2>${p.cta.h2}</h2>
-          <p class="section__lead section__lead--light">${p.cta.lead}</p>
-          <ul class="ticks ticks--light">
-            <li>${bar ? "Vaste prijs vooraf" : "Vanaf €30 p.p. all-in"}</li>
-            <li>Vrijblijvend, je zit nergens aan vast</li>
-            <li>Persoonlijk contact met Jan zelf</li>
-          </ul>
-          <a class="btn btn--whatsapp btn--lg" data-whatsapp href="#" target="_blank" rel="noopener">${WA_ICON} App Jan direct</a>
-        </div>
+${bookingSection(base, { h2: p.cta.h2, lead: p.cta.lead, bar, occasion: p.occasion, type: p.type })}`;
 
-        ${form(base, p)}
+  return shell({ base, current: p.slug, headOpts: { title: p.title, description: p.description, url, ld }, main });
+}
+
+// ---------- Stadspagina ----------
+
+function city(c) {
+  const base = "../";
+  const url = `${SITE}${c.slug}/`;
+  const ld = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: `Cocktailworkshop ${c.name}`,
+      serviceType: "Cocktailworkshop op locatie",
+      description: c.description,
+      url,
+      areaServed: { "@type": "City", name: c.name },
+      provider: PROVIDER,
+      offers: { "@type": "Offer", price: "30", priceCurrency: "EUR", description: "Vanaf €30 per persoon, all-in" },
+    },
+    faqLd(c.faq),
+    breadcrumbLd([["Home", SITE], ["Werkgebied", `${SITE}#werkgebied`], [c.name, url]]),
+  ];
+  const distance = c.km
+    ? `${c.name} ligt op ongeveer ${c.km} km van Heerhugowaard. De reiskosten zitten al in de prijs.`
+    : "Heerhugowaard is het middelpunt van het werkgebied. Korter kan de reis van Jan niet zijn.";
+
+  const main = `    <section class="hero hero--page">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          ${crumbs([["Home", base], ["Werkgebied", `${base}#werkgebied`], [c.name]])}
+          <p class="eyebrow reveal">Cocktailworkshop ${c.name}</p>
+          <h1 class="hero__title hero__title--page reveal">${c.h1}</h1>
+          <p class="hero__lead reveal">${c.lead}</p>
+          <div class="hero__cta reveal">
+            <a href="#aanvragen" class="btn btn--gold btn--lg">Check beschikbaarheid ${ARROW}</a>
+            <a href="#prijs" class="btn btn--ghost btn--lg">Bekijk prijs &amp; datum</a>
+          </div>
+          <ul class="hero__trust reveal" aria-label="Waarom Shake by Jan">
+            <li><strong>10 jaar</strong> horeca-ervaring</li>
+            <li><strong>Leukste bartender</strong> van Alkmaar</li>
+            <li><strong>${c.km ? `± ${c.km} km` : "0 km"}</strong> reiskosten inbegrepen</li>
+          </ul>
+        </div>
+        ${heroVisual("vanaf", "€30")}
       </div>
     </section>
-  </main>
 
-<!-- build:footer -->
-${footer(base)}
-<!-- /build:footer -->
+    <section class="section section--cream">
+      <div class="container intro">
+        <div class="intro__copy">
+          <p class="eyebrow eyebrow--dark reveal">${c.localEyebrow}</p>
+          <h2 class="reveal">${c.localH2}</h2>
+${c.paragraphs.map((t) => `          <p class="reveal">${t}</p>`).join("\n")}
+        </div>
+        <aside class="placecard reveal">
+          <h3>In en rond ${c.name}</h3>
+          <ul class="chips chips--dark">
+${c.places.map((pl) => `            <li>${pl}</li>`).join("\n")}
+          </ul>
+          <p>${distance}</p>
+        </aside>
+      </div>
+    </section>
 
-  <script src="${base}js/main.js" defer></script>
-</body>
-</html>
-`;
+    <section class="section section--dark">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Ideeën</p>
+          <h2>${c.ideasH2}</h2>
+        </div>
+        <div class="ideas">
+${c.ideas.map(([t, d], i) => `          <article class="idea reveal"><span class="idea__n">${pad(i + 1)}</span><h3>${t}</h3><p>${d}</p></article>`).join("\n")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--cream" id="prijs">
+      <div class="container price">
+        <div class="price__copy reveal">
+          <p class="eyebrow eyebrow--dark">Wat organiseer je?</p>
+          <h2>Wat wil je vieren <em>in ${c.name}?</em></h2>
+          <p>Vanaf €30 per persoon, all-in. Kies hieronder wat bij jullie past, of prik meteen een datum in de agenda.</p>
+          <ul class="actlist">
+${pages.map((p) => `            <li><a href="${base}${p.slug}/"><span><strong>${p.navLabel}</strong><small>${p.navSub}</small></span></a></li>`).join("\n")}
+          </ul>
+        </div>
+
+        ${calc({})}
+      </div>
+    </section>
+
+${faqSection(`Vragen over <em>${c.name}</em>`, c.faq, true)}
+
+${bookingSection(base, { h2: `Cocktails in ${c.name}? <em>Check je datum</em>`, lead: c.ctaLead })}`;
+
+  return shell({ base, current: c.slug, headOpts: { title: c.title, description: c.description, url, ld }, main });
+}
+
+// ---------- Recepten ----------
+
+function dot(r) {
+  return `<span class="rcard__dot" aria-hidden="true" style="background: radial-gradient(circle at 35% 30%, ${r.color[0]}, ${r.color[1]})"></span>`;
+}
+
+function recipeCard(r, base) {
+  return `          <a class="rcard reveal" href="${base}recepten/${r.slug}/">
+            ${dot(r)}
+            <strong>${r.name}</strong>
+            <p>${r.short}</p>
+            <small>${r.technique} · ${r.level} · ${r.time} min</small>
+            <span class="rcard__more">Bekijk recept ${ARROW}</span>
+          </a>`;
+}
+
+function ctaBand(base) {
+  return `    <section class="section section--dark cta-band">
+      <div class="hero__glow hero__glow--low" aria-hidden="true"></div>
+      <div class="container ctaband">
+        <div class="reveal">
+          <p class="eyebrow">Liever samen shaken?</p>
+          <h2>Leer cocktails maken <em>met Jan</em></h2>
+          <p>Cocktailworkshop op locatie binnen 30 km van Heerhugowaard. Vanaf €30 p.p. all-in, inclusief drank en materiaal.</p>
+        </div>
+        <div class="ctaband__btns reveal">
+          <a href="${base}cocktailworkshop/" class="btn btn--gold btn--lg">Bekijk de workshop ${ARROW}</a>
+          <a href="${base}cocktailworkshop/#aanvragen" class="btn btn--ghost btn--lg">Check beschikbaarheid</a>
+        </div>
+      </div>
+    </section>`;
+}
+
+function recipe(r) {
+  const base = "../../";
+  const url = `${SITE}recepten/${r.slug}/`;
+  const title = `${r.name} recept: zo maak je hem zelf | Shake by Jan`;
+  const description = `${r.lead.split(". ")[0]}. Recept met ingrediënten, stappen en tips van de bar.`;
+  const others = recipes.filter((o) => o.slug !== r.slug).slice(0, 3);
+  const ld = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Recipe",
+      name: r.name,
+      description: r.lead,
+      author: { "@type": "Organization", name: "Shake by Jan", url: SITE },
+      recipeCategory: "Cocktail",
+      prepTime: `PT${r.time}M`,
+      totalTime: `PT${r.time}M`,
+      recipeYield: "1 cocktail",
+      keywords: `${r.name}, ${r.name} recept, cocktail maken`,
+      recipeIngredient: r.ingredients.map(([a, n]) => (a ? `${a} ${n}` : n)),
+      recipeInstructions: r.steps.map((s) => ({ "@type": "HowToStep", text: s })),
+    },
+    breadcrumbLd([["Home", SITE], ["Recepten", `${SITE}recepten/`], [r.name, url]]),
+  ];
+
+  const main = `    <section class="hero hero--page hero--recipe">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container recipe-hero">
+        ${crumbs([["Home", base], ["Recepten", `${base}recepten/`], [r.name]])}
+        <p class="eyebrow reveal">Cocktailrecept</p>
+        <h1 class="hero__title hero__title--page reveal">${r.name} <em>maken</em></h1>
+        <p class="hero__lead reveal">${r.lead}</p>
+        <ul class="recipe-meta reveal">
+          <li><small>Glas</small><strong>${r.glass}</strong></li>
+          <li><small>Techniek</small><strong>${r.technique}</strong></li>
+          <li><small>Niveau</small><strong>${r.level}</strong></li>
+          <li><small>Tijd</small><strong>${r.time} min</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--cream">
+      <div class="container recipe">
+        <aside class="recipe__card reveal">
+          ${dot(r)}
+          <h2 class="recipe__card-title">Ingrediënten</h2>
+          <p class="recipe__yield">Voor 1 cocktail</p>
+          <ul class="recipe__ing">
+${r.ingredients.map(([a, n]) => `            <li><span>${a || "–"}</span>${n}</li>`).join("\n")}
+          </ul>
+          <h3>Benodigdheden</h3>
+          <p>${r.tools}</p>
+        </aside>
+
+        <div class="recipe__body">
+          <div class="recipe__intro reveal">
+${r.intro.map((t) => `            <p>${t}</p>`).join("\n")}
+          </div>
+
+          <h2 class="reveal">Zo maak je <em>een ${r.name}</em></h2>
+          <ol class="recipe__steps reveal">
+${r.steps.map((s) => `            <li>${s}</li>`).join("\n")}
+          </ol>
+
+          <div class="recipe__tip reveal"><strong>Tip van de bar</strong><p>${r.tip}</p></div>
+
+          <h2 class="reveal">Veelgemaakte <em>fouten</em></h2>
+          <ul class="ticks reveal">
+${r.mistakes.map((m) => `            <li>${m}</li>`).join("\n")}
+          </ul>
+
+          <h2 class="reveal">Variatie: <em>${r.variation[0]}</em></h2>
+          <p class="reveal">${r.variation[1]}</p>
+        </div>
+      </div>
+    </section>
+
+${ctaBand(base)}
+
+    <section class="section section--soft">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow eyebrow--dark">Meer recepten</p>
+          <h2>Nog een <em>rondje?</em></h2>
+        </div>
+        <div class="recipes">
+${others.map((o) => recipeCard(o, base)).join("\n")}
+        </div>
+      </div>
+    </section>`;
+
+  return shell({ base, current: "recepten", cta: `${base}cocktailworkshop/#aanvragen`, headOpts: { title, description, url, ld, type: "article" }, main });
+}
+
+function recipesIndex() {
+  const base = "../";
+  const url = `${SITE}recepten/`;
+  const ld = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Cocktailrecepten",
+      itemListElement: recipes.map((r, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}recepten/${r.slug}/`, name: r.name })),
+    },
+    breadcrumbLd([["Home", SITE], ["Recepten", url]]),
+  ];
+  const main = `    <section class="hero hero--page hero--recipe">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container recipe-hero">
+        ${crumbs([["Home", base], ["Recepten"]])}
+        <p class="eyebrow reveal">Recepten</p>
+        <h1 class="hero__title hero__title--page reveal">Cocktailrecepten <em>van de bar</em></h1>
+        <p class="hero__lead reveal">Klassiekers en favorieten, met de juiste verhoudingen en de trucs die het verschil maken. Pak je shaker erbij.</p>
+      </div>
+    </section>
+
+    <section class="section section--cream">
+      <div class="container">
+        <div class="recipes">
+${recipes.map((r) => recipeCard(r, base)).join("\n")}
+        </div>
+      </div>
+    </section>
+
+${ctaBand(base)}`;
+
+  return shell({
+    base,
+    current: "recepten",
+    cta: `${base}cocktailworkshop/#aanvragen`,
+    headOpts: { title: "Cocktailrecepten: klassiekers zelf maken | Shake by Jan", description: "Cocktailrecepten met ingrediënten, stappen en tips: Espresso Martini, Pornstar Martini, Mojito, Whiskey Sour, Moscow Mule en Aperol Spritz.", url, ld },
+    main,
+  });
 }
 
 // ---------- index.html bijwerken ----------
@@ -506,19 +831,30 @@ index = fill(index, "form", form("", {}));
 index = fill(index, "footer", footer(""));
 fs.writeFileSync(path.join(ROOT, "index.html"), index);
 
-// ---------- Landingspagina's + sitemap ----------
+// ---------- Pagina's schrijven ----------
 
-for (const p of pages) {
-  const dir = path.join(ROOT, p.slug);
+function write(rel, html) {
+  const dir = path.join(ROOT, rel);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "index.html"), landing(p));
+  fs.writeFileSync(path.join(dir, "index.html"), html);
 }
 
-const urls = ["", ...pages.map((p) => `${p.slug}/`)];
+pages.forEach((p) => write(p.slug, landing(p)));
+cities.forEach((c) => write(c.slug, city(c)));
+write("recepten", recipesIndex());
+recipes.forEach((r) => write(path.join("recepten", r.slug), recipe(r)));
+
+const urls = [
+  ["", "1.0"],
+  ...pages.map((p) => [`${p.slug}/`, "0.9"]),
+  ...cities.map((c) => [`${c.slug}/`, "0.8"]),
+  ["recepten/", "0.6"],
+  ...recipes.map((r) => [`recepten/${r.slug}/`, "0.5"]),
+];
 fs.writeFileSync(path.join(ROOT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url><loc>${SITE}${u}</loc><changefreq>monthly</changefreq><priority>${u ? "0.8" : "1.0"}</priority></url>`).join("\n")}
+${urls.map(([u, prio]) => `  <url><loc>${SITE}${u}</loc><changefreq>monthly</changefreq><priority>${prio}</priority></url>`).join("\n")}
 </urlset>
 `);
 
-console.log(`Gebouwd: index.html + ${pages.length} landingspagina's (${pages.map((p) => p.slug).join(", ")}), sitemap.xml. Foto van Jan: ${HAS_PHOTO ? "ja" : "nog niet (placeholder)"}.`);
+console.log(`Gebouwd: index.html, ${pages.length} activiteiten, ${cities.length} steden, ${recipes.length} recepten + overzicht, sitemap (${urls.length} URL's). Foto van Jan: ${HAS_PHOTO ? "ja" : "nog niet (placeholder)"}.`);

@@ -7,6 +7,7 @@ Statische HTML/CSS/JS, geen build-stap.
 - `privacy.html` – privacyverklaring
 - `css/style.css`, `js/main.js`
 - Lokale preview: `node tools/serve.js 8767` → http://localhost:8767
+- Live (GitHub Pages, deployt automatisch bij elke push naar `main`): https://laurens-commits.github.io/shake-by-jan/
 
 ## Nog in te vullen (placeholders)
 

@@ -419,7 +419,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
   .split, .price, .about__grid, .area, .faq, .booking { grid-template-columns: 1fr; gap: 44px; }
   .faq .section__head, .booking__copy { position: static; }
   .about__photo { max-width: 460px; }
-  .award { right: 12px; }
+  .about__photo { margin-bottom: 30px; }
+  .award { right: 16px; left: 16px; bottom: -30px; }
   .steps { grid-template-columns: 1fr 1fr; gap: 40px 20px; }
   .steps::before { display: none; }
   .included__grid { grid-template-columns: 1fr 1fr; }

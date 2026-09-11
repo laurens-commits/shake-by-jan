@@ -1,0 +1,524 @@
+// Bouwt de site: gedeelde onderdelen (header, calculator, foto, formulier, footer)
+// worden in index.html gezet tussen <!-- build:naam --> markers, en per activiteit
+// wordt een landingspagina gegenereerd in /<slug>/index.html.
+// Gebruik: node tools/build.js
+const fs = require("fs");
+const path = require("path");
+const pages = require("./pages");
+
+const ROOT = path.join(__dirname, "..");
+const SITE = "https://www.shakebyjan.nl/";
+const HAS_PHOTO = fs.existsSync(path.join(ROOT, "assets", "jan-berkhout.jpg"));
+
+const ARROW = '<span aria-hidden="true">→</span>';
+const WA_PATH = "M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z";
+const WA_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${WA_PATH}"/></svg>`;
+const LOGO_MARK = '<span class="logo__mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 7h20l-10 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 18v8M11 26h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="23" cy="6" r="3.2" fill="currentColor"/></svg></span>';
+
+const pad = (n) => String(n).padStart(2, "0");
+const strip = (html) => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&");
+
+// ---------- Gedeelde onderdelen ----------
+
+function header(base, current = "") {
+  const home = base || "";
+  const items = pages.map((p, i) => `            <a href="${base}${p.slug}/" class="nav__item"${p.slug === current ? ' aria-current="page"' : ""}>
+              <span class="nav__num">${pad(i + 1)}</span>
+              <span><strong>${p.navLabel}</strong><small>${p.navSub}</small></span>
+            </a>`).join("\n");
+  return `  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="${base || "#top"}" class="logo" aria-label="Shake by Jan – naar de homepage">
+        ${LOGO_MARK}
+        <span class="logo__text">Shake <em>by Jan</em></span>
+      </a>
+      <nav class="nav" id="nav" aria-label="Hoofdmenu">
+        <div class="nav__group">
+          <button type="button" class="nav__drop" aria-expanded="false" aria-controls="nav-panel"${current ? " aria-current=\"true\"" : ""}>Activiteiten <svg class="nav__chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5"/></svg></button>
+          <p class="nav__label">Activiteiten</p>
+          <div class="nav__panel" id="nav-panel">
+${items}
+          </div>
+        </div>
+        <div class="nav__links">
+          <a href="${home}#prijs" class="nav__link">Prijs</a>
+          <a href="${home}#jan" class="nav__link">Over Jan</a>
+          <a href="${home}#werkgebied" class="nav__link">Werkgebied</a>
+          <a href="${home}#faq" class="nav__link">Vragen</a>
+        </div>
+        <div class="nav__foot">
+          <a href="#aanvragen" class="btn btn--gold nav__cta">Check beschikbaarheid</a>
+          <a href="#" class="nav__wa" data-whatsapp target="_blank" rel="noopener">${WA_ICON} WhatsApp Jan</a>
+        </div>
+      </nav>
+      <button class="burger" id="burger" aria-label="Menu openen" aria-expanded="false" aria-controls="nav"><span></span><span></span></button>
+    </div>
+  </header>`;
+}
+
+function calc({ mode = "workshop", occasion = "Vriendengroep", type = "Cocktailworkshop" } = {}) {
+  const bar = mode === "bar";
+  const occs = bar
+    ? [["Verjaardag of jubileum", "Verjaardag"], ["Bruiloft", "Bruiloft"], ["Bedrijfsfeest", "Bedrijf"]]
+    : [["Vriendengroep", "Vrienden"], ["Vrijgezellenfeest", "Vrijgezellen"], ["Bedrijfsfeest", "Bedrijf"]];
+  const checked = occs.some((o) => o[0] === occasion) ? occasion : occs[0][0];
+  const [min, max, val, step] = bar ? [10, 150, 40, 5] : [6, 60, 12, 1];
+  const total = bar
+    ? `<div class="calc__total"><span>Prijs</span><strong>Op maat</strong><small>je krijgt vooraf een vaste prijs, afgestemd op je feest</small></div>`
+    : `<div class="calc__total"><span>Vanaf</span><strong id="calc-total">€ ${val * 30}</strong><small>all-in, incl. drank, materiaal en reiskosten binnen 30 km</small></div>`;
+  return `<div class="calc reveal" aria-labelledby="calc-title" data-type="${type}">
+          <h3 id="calc-title" class="calc__title">${bar ? "Datum &amp; gasten" : "Prijs &amp; datum"}</h3>
+
+          <fieldset class="calc__occasions">
+            <legend>Gelegenheid</legend>
+${occs.map(([v, l]) => `            <label><input type="radio" name="calc-occ" value="${v}"${v === checked ? " checked" : ""}><span>${l}</span></label>`).join("\n")}
+          </fieldset>
+
+          <label class="calc__label" for="calc-n">${bar ? "Aantal gasten" : "Aantal personen"} <output id="calc-n-out" for="calc-n">${val}</output></label>
+          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}">
+          <div class="calc__scale" aria-hidden="true"><span>${min}</span><span>${max}${bar ? "+" : ""}</span></div>
+
+          ${total}
+
+          <p class="calc__legend" id="cal-label">Kies je datum</p>
+          <div class="cal" role="group" aria-labelledby="cal-label">
+            <div class="cal__head">
+              <button type="button" class="cal__nav" data-dir="-1" aria-label="Vorige maand">‹</button>
+              <strong class="cal__month" id="cal-month" aria-live="polite"></strong>
+              <button type="button" class="cal__nav" data-dir="1" aria-label="Volgende maand">›</button>
+            </div>
+            <div class="cal__dow" aria-hidden="true"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>
+            <div class="cal__grid" id="cal-grid"></div>
+          </div>
+
+          <fieldset class="calc__occasions">
+            <legend>Dagdeel</legend>
+            <label><input type="radio" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
+            <label><input type="radio" name="calc-part" value="Middag"><span>Middag</span></label>
+            <label><input type="radio" name="calc-part" value="Avond"><span>Avond</span></label>
+          </fieldset>
+
+          <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag een voorstel aan ${ARROW}</a>
+          <p class="calc__note">${bar ? "" : "Indicatie op basis van €30 p.p. "}Jan bevestigt persoonlijk of je datum nog vrij is.</p>
+        </div>`;
+}
+
+function photo(base) {
+  const img = HAS_PHOTO
+    ? `<img src="${base}assets/jan-berkhout.jpg" alt="Jan Berkhout met zijn prijs De leukste bartender van Alkmaar 2019" loading="lazy">`
+    : `<div class="photo-ph" role="img" aria-label="Foto van Jan Berkhout (volgt)">
+            <span class="photo-ph__mono">JB</span>
+            <span class="photo-ph__hint">Foto van Jan achter de bar</span>
+          </div>`;
+  return `${img}
+          <div class="award">
+            <span class="award__ico" aria-hidden="true">
+              <svg viewBox="0 0 40 40"><circle cx="20" cy="15" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 23l-4 13 7-3 4 5 3-11M27 23l4 13-7-3-4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 9l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="currentColor"/></svg>
+            </span>
+            <span><small>Winnaar 2019 · UIT072</small><strong>De leukste bartender van Alkmaar</strong></span>
+          </div>`;
+}
+
+function form(base, { occasion = "", type = "Cocktailworkshop" } = {}) {
+  const opt = (v, sel) => `<option${v === sel ? " selected" : ""}>${v}</option>`;
+  const occs = ["Vriendengroep", "Vrijgezellenfeest", "Bedrijfsfeest", "Verjaardag of jubileum", "Bruiloft", "Anders"];
+  const types = ["Cocktailworkshop", "Cocktailbar op locatie", "Weet ik nog niet"];
+  return `<form class="form reveal" id="form" novalidate>
+          <input type="hidden" name="access_key" value="JOUW-WEB3FORMS-KEY">
+          <input type="hidden" name="subject" value="Nieuwe aanvraag via shakebyjan.nl">
+          <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+
+          <div class="form__row">
+            <div class="field">
+              <label for="f-occ">Gelegenheid</label>
+              <select id="f-occ" name="Gelegenheid" required>
+                <option value="">Kies…</option>
+                ${occs.map((o) => opt(o, occasion)).join("\n                ")}
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-type">Wat zoek je?</label>
+              <select id="f-type" name="Type">
+                ${types.map((t) => opt(t, type)).join("\n                ")}
+              </select>
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="f-date">Datum</label>
+              <input type="date" id="f-date" name="Datum" required>
+            </div>
+            <div class="field">
+              <label for="f-part">Dagdeel</label>
+              <select id="f-part" name="Dagdeel" required>
+                <option value="">Kies…</option>
+                <option>Ochtend</option>
+                <option>Middag</option>
+                <option>Avond</option>
+                <option>Weet ik nog niet</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="f-n">Aantal personen</label>
+              <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+            </div>
+            <div class="field">
+              <label for="f-place">Plaats van het feest</label>
+              <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="f-name">Naam</label>
+              <input type="text" id="f-name" name="Naam" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="f-phone">Telefoon <span class="opt">(optioneel)</span></label>
+              <input type="tel" id="f-phone" name="Telefoon" autocomplete="tel">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-mail">E-mailadres</label>
+            <input type="email" id="f-mail" name="email" autocomplete="email" required>
+          </div>
+
+          <div class="field">
+            <label for="f-msg">Nog iets wat Jan moet weten? <span class="opt">(optioneel)</span></label>
+            <textarea id="f-msg" name="Bericht" rows="3" placeholder="Bijv. een thema, alcoholvrije gasten of een verrassing voor de bruid"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--gold btn--lg btn--block">Verstuur aanvraag ${ARROW}</button>
+          <p class="form__legal">Vrijblijvend. We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Zie de <a href="${base}privacy.html">privacyverklaring</a>.</p>
+          <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
+        </form>`;
+}
+
+function footer(base) {
+  const home = base || "";
+  return `  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <a href="${base || "#top"}" class="logo logo--footer">
+          ${LOGO_MARK}
+          <span class="logo__text">Shake <em>by Jan</em></span>
+        </a>
+        <p class="footer__tag">Cocktailworkshops en cocktailbar op locatie in Heerhugowaard, Alkmaar en omgeving.</p>
+      </div>
+      <div>
+        <h4>Activiteiten</h4>
+        <ul>
+${pages.map((p) => `          <li><a href="${base}${p.slug}/">${p.navLabel}</a></li>`).join("\n")}
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="#" data-whatsapp target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="mailto:info@shakebyjan.nl">info@shakebyjan.nl</a></li>
+          <li><a href="${home}#werkgebied">Regio Heerhugowaard (30 km)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <p>© <span id="year">2026</span> Shake by Jan · KvK 00000000 · <a href="${base}privacy.html">Privacy</a></p>
+      <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
+    </div>
+  </footer>
+
+  <!-- Sticky mobiele CTA -->
+  <div class="mobilebar" id="mobilebar">
+    <div><small>Cocktailworkshop</small><strong>vanaf €30 p.p.</strong></div>
+    <div class="mobilebar__actions">
+      <a class="mobilebar__wa" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht">${WA_ICON}</a>
+      <a href="#aanvragen" class="btn btn--gold">Aanvragen</a>
+    </div>
+  </div>
+
+  <!-- Zwevende WhatsApp-knop -->
+  <a class="wa-float" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht">${WA_ICON}</a>`;
+}
+
+function heroVisual(small, big) {
+  return `<div class="hero__visual reveal" aria-hidden="true">
+          <svg class="glass" viewBox="0 0 400 520">
+            <defs>
+              <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1b75a"/><stop offset="1" stop-color="#e0673a"/></linearGradient>
+              <clipPath id="bowl"><path d="M78 150 C 88 236, 168 256, 200 256 C 232 256, 312 236, 322 150 Z"/></clipPath>
+            </defs>
+            <g clip-path="url(#bowl)">
+              <rect class="glass__liquid" x="60" y="172" width="280" height="110" fill="url(#liquid)"/>
+              <path class="glass__wave" d="M40 174 Q 90 164 140 174 T 240 174 T 340 174 T 440 174 V 190 H 40 Z" fill="#f6c878" opacity=".55"/>
+              <circle class="bubble b1" cx="170" cy="240" r="3"/><circle class="bubble b2" cx="205" cy="246" r="2.2"/><circle class="bubble b3" cx="232" cy="236" r="2.6"/><circle class="bubble b4" cx="188" cy="250" r="1.8"/>
+            </g>
+            <path d="M78 150 C 88 236, 168 256, 200 256 C 232 256, 312 236, 322 150" fill="none" stroke="#e9c27a" stroke-width="2.5"/>
+            <ellipse cx="200" cy="150" rx="122" ry="13" fill="none" stroke="#e9c27a" stroke-width="2.5"/>
+            <path d="M200 256 V 436" stroke="#e9c27a" stroke-width="2.5"/>
+            <ellipse cx="200" cy="442" rx="74" ry="11" fill="none" stroke="#e9c27a" stroke-width="2.5"/>
+            <g class="glass__garnish" transform="translate(316 142)">
+              <circle r="36" fill="#e0673a"/><circle r="30" fill="#f3a257"/>
+              <g stroke="#e0673a" stroke-width="2"><path d="M0 0 L0 -30M0 0 L26 -15M0 0 L26 15M0 0 L0 30M0 0 L-26 15M0 0 L-26 -15"/></g>
+              <circle r="4" fill="#f7d49a"/>
+            </g>
+            <g class="sparkles" fill="#e9c27a">
+              <path d="M70 70 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z"/><path d="M350 300 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z"/><path d="M52 330 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z"/>
+            </g>
+          </svg>
+          <div class="badge">
+            <svg viewBox="0 0 200 200" class="badge__ring">
+              <defs><path id="circ" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
+              <text><textPath href="#circ" textLength="486" lengthAdjust="spacing">ALL-IN · SHAKE BY JAN · ALL-IN · SHAKE BY JAN ·</textPath></text>
+            </svg>
+            <div class="badge__core"><small>${small}</small><strong${big.length > 4 ? ' class="badge__word"' : ""}>${big}</strong></div>
+          </div>
+        </div>`;
+}
+
+// ---------- Landingspagina ----------
+
+function landing(p) {
+  const base = "../";
+  const url = `${SITE}${p.slug}/`;
+  const bar = p.mode === "bar";
+  const others = pages.filter((o) => o.slug !== p.slug);
+  const ld = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: `${p.navLabel} op locatie`,
+      serviceType: p.navLabel,
+      description: p.description,
+      url,
+      areaServed: { "@type": "GeoCircle", geoMidpoint: { "@type": "GeoCoordinates", latitude: 52.6667, longitude: 4.8306 }, geoRadius: "30000" },
+      provider: { "@type": "LocalBusiness", name: "Shake by Jan", url: SITE, address: { "@type": "PostalAddress", addressLocality: "Heerhugowaard", addressCountry: "NL" } },
+      ...(bar ? {} : { offers: { "@type": "Offer", price: "30", priceCurrency: "EUR", description: "Vanaf €30 per persoon, all-in" } }),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: p.faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: strip(a) } })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+        { "@type": "ListItem", position: 2, name: p.navLabel, item: url },
+      ],
+    },
+  ];
+
+  return `<!DOCTYPE html>
+<html lang="nl" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${p.title.replace(/&(?!amp;)/g, "&amp;")}</title>
+  <meta name="description" content="${p.description}">
+  <link rel="canonical" href="${url}">
+  <meta name="theme-color" content="#110e0b">
+  <link rel="icon" href="${base}assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:title" content="${p.title.replace(/&(?!amp;)/g, "&amp;")}">
+  <meta property="og:description" content="${p.description}">
+  <meta property="og:url" content="${url}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="${base}css/style.css">
+  <script type="application/ld+json">${JSON.stringify(ld)}</script>
+</head>
+<body>
+  <a class="skip" href="#main">Naar inhoud</a>
+
+<!-- build:header -->
+${header(base, p.slug)}
+<!-- /build:header -->
+
+  <main id="main">
+    <section class="hero hero--page">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <nav class="crumbs reveal" aria-label="Kruimelpad"><a href="${base}">Home</a><span aria-hidden="true">/</span><span aria-current="page">${p.navLabel}</span></nav>
+          <p class="eyebrow reveal">${p.hero.eyebrow}</p>
+          <h1 class="hero__title hero__title--page reveal">${p.hero.h1}</h1>
+          <p class="hero__lead reveal">${p.hero.lead}</p>
+          <div class="hero__cta reveal">
+            <a href="#aanvragen" class="btn btn--gold btn--lg">Check beschikbaarheid ${ARROW}</a>
+            <a href="#prijs" class="btn btn--ghost btn--lg">${p.hero.secondary}</a>
+          </div>
+          <ul class="hero__trust reveal" aria-label="Waarom Shake by Jan">
+            <li><strong>10 jaar</strong> horeca-ervaring</li>
+            <li><strong>Leukste bartender</strong> van Alkmaar</li>
+            <li>${bar ? "<strong>Op maat</strong> vaste prijs vooraf" : "<strong>All-in</strong> vanaf €30 p.p."}</li>
+          </ul>
+        </div>
+        ${bar ? heroVisual("prijs", "op maat") : heroVisual("vanaf", "€30")}
+      </div>
+    </section>
+
+    <section class="section section--cream">
+      <div class="container intro">
+        <div class="intro__copy">
+          <p class="eyebrow eyebrow--dark reveal">${p.intro.eyebrow}</p>
+          <h2 class="reveal">${p.intro.h2}</h2>
+${p.intro.paragraphs.map((t) => `          <p class="reveal">${t}</p>`).join("\n")}
+        </div>
+        <div class="intro__side">
+          <h3 class="intro__side-title reveal">${p.intro.benefitsTitle}</h3>
+          <div class="benefits">
+${p.intro.benefits.map(([t, d]) => `            <article class="benefit reveal"><span class="benefit__ico" aria-hidden="true">✦</span><h4>${t}</h4><p>${d}</p></article>`).join("\n")}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--dark">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Zo werkt het</p>
+          <h2>${p.program.h2}</h2>
+        </div>
+        <ol class="steps">
+${p.program.steps.map(([t, d], i) => `          <li class="reveal"><span class="steps__n">${i + 1}</span><h3>${t}</h3><p>${d}</p></li>`).join("\n")}
+        </ol>
+${p.program.note ? `        <p class="steps__note">${p.program.note}</p>` : ""}
+      </div>
+    </section>
+
+    <section class="section section--cream" id="prijs">
+      <div class="container price">
+        <div class="price__copy reveal">
+          <p class="eyebrow eyebrow--dark">${p.extra.eyebrow}</p>
+          <h2>${p.extra.h2}</h2>
+          ${p.extra.html}
+        </div>
+
+        ${calc(p)}
+      </div>
+    </section>
+
+    <section class="section section--dark about" id="jan">
+      <div class="container about__grid">
+        <div class="about__photo reveal">
+          ${photo(base)}
+        </div>
+        <div class="about__copy">
+          <p class="eyebrow reveal">Je host</p>
+          <h2 class="reveal">Met <em>Jan Berkhout</em></h2>
+          <p class="reveal">${p.host}</p>
+          <p class="reveal"><a class="about__more" href="${base}#jan">Meer over Jan ${ARROW}</a></p>
+          <a href="#aanvragen" class="btn btn--gold btn--lg reveal">Boek Jan ${ARROW}</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--cream" id="faq">
+      <div class="container faq">
+        <div class="section__head section__head--left reveal">
+          <p class="eyebrow eyebrow--dark">Veelgestelde vragen</p>
+          <h2>${p.faqTitle}</h2>
+          <p class="section__lead">Staat je vraag er niet tussen? Stuur Jan een berichtje via WhatsApp of het aanvraagformulier.</p>
+        </div>
+        <div class="faq__list">
+${p.faq.map(([q, a], i) => `          <details class="reveal"${i === 0 ? " open" : ""}>
+            <summary>${q}</summary>
+            <p>${a}</p>
+          </details>`).join("\n")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--soft">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow eyebrow--dark">Ook leuk</p>
+          <h2>Meer manieren <em>om te shaken</em></h2>
+        </div>
+        <div class="related">
+${others.map((o) => `          <a class="reveal" href="${base}${o.slug}/"><strong>${o.navLabel}</strong><small>${o.navSub}</small><span>Bekijk ${ARROW}</span></a>`).join("\n")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--dark cta-section" id="aanvragen">
+      <div class="hero__glow hero__glow--low" aria-hidden="true"></div>
+      <div class="container booking">
+        <div class="booking__copy reveal">
+          <p class="eyebrow">Vrijblijvend aanvragen</p>
+          <h2>${p.cta.h2}</h2>
+          <p class="section__lead section__lead--light">${p.cta.lead}</p>
+          <ul class="ticks ticks--light">
+            <li>${bar ? "Vaste prijs vooraf" : "Vanaf €30 p.p. all-in"}</li>
+            <li>Vrijblijvend, je zit nergens aan vast</li>
+            <li>Persoonlijk contact met Jan zelf</li>
+          </ul>
+          <a class="btn btn--whatsapp btn--lg" data-whatsapp href="#" target="_blank" rel="noopener">${WA_ICON} App Jan direct</a>
+        </div>
+
+        ${form(base, p)}
+      </div>
+    </section>
+  </main>
+
+<!-- build:footer -->
+${footer(base)}
+<!-- /build:footer -->
+
+  <script src="${base}js/main.js" defer></script>
+</body>
+</html>
+`;
+}
+
+// ---------- index.html bijwerken ----------
+
+function wrapOnce(html, name, regex) {
+  if (html.includes(`<!-- build:${name} -->`)) return html;
+  if (!regex.test(html)) throw new Error(`Blok '${name}' niet gevonden in index.html`);
+  return html.replace(regex, (m) => `<!-- build:${name} -->\n${m}\n<!-- /build:${name} -->`);
+}
+
+function fill(html, name, content) {
+  const re = new RegExp(`<!-- build:${name} -->[\\s\\S]*?<!-- /build:${name} -->`);
+  return html.replace(re, () => `<!-- build:${name} -->\n${content}\n<!-- /build:${name} -->`);
+}
+
+let index = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+index = index.replace(/\s*<!-- Vervang dit blok[^\n]*-->/, "");
+index = wrapOnce(index, "header", /  <header class="header" id="top">[\s\S]*?<\/header>/);
+index = wrapOnce(index, "calc", /<div class="calc reveal"[\s\S]*?<p class="calc__note">[^<]*<\/p>\s*<\/div>/);
+index = wrapOnce(index, "photo", /<div class="photo-ph"[\s\S]*?<\/div>\s*<div class="award">[\s\S]*?<\/div>/);
+index = wrapOnce(index, "form", /<form class="form reveal" id="form"[\s\S]*?<\/form>/);
+index = wrapOnce(index, "footer", /  <!-- ============ FOOTER ============ -->[\s\S]*?(?=\n\s*<script src="js\/main\.js")/);
+
+index = fill(index, "header", header(""));
+index = fill(index, "calc", calc());
+index = fill(index, "photo", photo(""));
+index = fill(index, "form", form("", {}));
+index = fill(index, "footer", footer(""));
+fs.writeFileSync(path.join(ROOT, "index.html"), index);
+
+// ---------- Landingspagina's + sitemap ----------
+
+for (const p of pages) {
+  const dir = path.join(ROOT, p.slug);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), landing(p));
+}
+
+const urls = ["", ...pages.map((p) => `${p.slug}/`)];
+fs.writeFileSync(path.join(ROOT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map((u) => `  <url><loc>${SITE}${u}</loc><changefreq>monthly</changefreq><priority>${u ? "0.8" : "1.0"}</priority></url>`).join("\n")}
+</urlset>
+`);
+
+console.log(`Gebouwd: index.html + ${pages.length} landingspagina's (${pages.map((p) => p.slug).join(", ")}), sitemap.xml. Foto van Jan: ${HAS_PHOTO ? "ja" : "nog niet (placeholder)"}.`);

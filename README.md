@@ -6,6 +6,9 @@ Statische HTML/CSS/JS, geen build-stap.
 - `index.html` – one-pager (hero, gelegenheden, aanbod, prijscalculator, over Jan, werkwijze, werkgebied, FAQ, aanvraagformulier)
 - `privacy.html` – privacyverklaring
 - `css/style.css`, `js/main.js`
+- Landingspagina's per activiteit: `/cocktailworkshop/`, `/cocktailfeest/`, `/vrijgezellenfeest/`, `/vriendenuitje/`, `/bedrijfsuitje/`
+- **Bouwen:** `node tools/build.js` genereert de landingspagina's uit `tools/pages.js` en zet de gedeelde onderdelen (header/menu, calculator met agenda, foto van Jan, formulier, footer) in `index.html` tussen de `<!-- build:... -->` markers. Pas tekst van landingspagina's aan in `tools/pages.js` en gedeelde onderdelen in `tools/build.js`, niet in de gegenereerde HTML. Draai daarna opnieuw.
+- Foto van Jan: zet hem als `assets/jan-berkhout.jpg` neer en draai de build; de placeholder wordt dan overal vervangen.
 - Lokale preview: `node tools/serve.js 8767` → http://localhost:8767
 - Live (GitHub Pages, deployt automatisch bij elke push naar `main`): https://laurens-commits.github.io/shake-by-jan/
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cocktailworkshop op locatie in Heerhugowaard &amp; Alkmaar | Shake by Jan</title>
-  <meta name="description" content="Cocktailworkshop of complete cocktailbar op locatie, met Jan Berkhout, verkozen tot beste barman van Alkmaar. Voor vrienden, vrijgezellenfeesten en bedrijfsfeesten binnen 30 km van Heerhugowaard. Vanaf €30 p.p. all-in.">
+  <meta name="description" content="Cocktailworkshop of complete cocktailbar op locatie, met Jan Berkhout, winnaar van De leukste bartender van Alkmaar. Voor vrienden, vrijgezellenfeesten en bedrijfsfeesten binnen 30 km van Heerhugowaard. Vanaf €30 p.p. all-in.">
   <link rel="canonical" href="https://www.shakebyjan.nl/">
   <meta name="theme-color" content="#110e0b">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -46,26 +46,55 @@
   <a class="skip" href="#main">Naar inhoud</a>
 
   <!-- ============ HEADER ============ -->
+<!-- build:header -->
   <header class="header" id="top">
     <div class="container header__inner">
-      <a href="#top" class="logo" aria-label="Shake by Jan – naar boven">
-        <span class="logo__mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32"><path d="M6 7h20l-10 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 18v8M11 26h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="23" cy="6" r="3.2" fill="currentColor"/></svg>
-        </span>
+      <a href="#top" class="logo" aria-label="Shake by Jan – naar de homepage">
+        <span class="logo__mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 7h20l-10 11z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16 18v8M11 26h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="23" cy="6" r="3.2" fill="currentColor"/></svg></span>
         <span class="logo__text">Shake <em>by Jan</em></span>
       </a>
       <nav class="nav" id="nav" aria-label="Hoofdmenu">
-        <a href="#gelegenheden">Gelegenheden</a>
-        <a href="#aanbod">Aanbod</a>
-        <a href="#prijs">Prijs</a>
-        <a href="#jan">Over Jan</a>
-        <a href="#werkgebied">Werkgebied</a>
-        <a href="#faq">Vragen</a>
-        <a href="#aanvragen" class="btn btn--gold btn--sm nav__cta">Check beschikbaarheid</a>
+        <div class="nav__group">
+          <button type="button" class="nav__drop" aria-expanded="false" aria-controls="nav-panel">Activiteiten <svg class="nav__chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5"/></svg></button>
+          <p class="nav__label">Activiteiten</p>
+          <div class="nav__panel" id="nav-panel">
+            <a href="cocktailworkshop/" class="nav__item">
+              <span class="nav__num">01</span>
+              <span><strong>Cocktailworkshop</strong><small>Zelf leren shaken</small></span>
+            </a>
+            <a href="cocktailfeest/" class="nav__item">
+              <span class="nav__num">02</span>
+              <span><strong>Cocktailfeest</strong><small>Een barman op je feest</small></span>
+            </a>
+            <a href="vrijgezellenfeest/" class="nav__item">
+              <span class="nav__num">03</span>
+              <span><strong>Vrijgezellenfeest</strong><small>Voor de bruid of bruidegom</small></span>
+            </a>
+            <a href="vriendenuitje/" class="nav__item">
+              <span class="nav__num">04</span>
+              <span><strong>Vriendenuitje</strong><small>Samen iets nieuws doen</small></span>
+            </a>
+            <a href="bedrijfsuitje/" class="nav__item">
+              <span class="nav__num">05</span>
+              <span><strong>Bedrijfsuitje</strong><small>Team, borrel of personeelsfeest</small></span>
+            </a>
+          </div>
+        </div>
+        <div class="nav__links">
+          <a href="#prijs" class="nav__link">Prijs</a>
+          <a href="#jan" class="nav__link">Over Jan</a>
+          <a href="#werkgebied" class="nav__link">Werkgebied</a>
+          <a href="#faq" class="nav__link">Vragen</a>
+        </div>
+        <div class="nav__foot">
+          <a href="#aanvragen" class="btn btn--gold nav__cta">Check beschikbaarheid</a>
+          <a href="#" class="nav__wa" data-whatsapp target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z"/></svg> WhatsApp Jan</a>
+        </div>
       </nav>
       <button class="burger" id="burger" aria-label="Menu openen" aria-expanded="false" aria-controls="nav"><span></span><span></span></button>
     </div>
   </header>
+<!-- /build:header -->
 
   <main id="main">
 
@@ -83,7 +112,7 @@
           </div>
           <ul class="hero__trust reveal" aria-label="Waarom Shake by Jan">
             <li><strong>10 jaar</strong> horeca-ervaring</li>
-            <li><strong>Beste barman</strong> van Alkmaar</li>
+            <li><strong>Leukste bartender</strong> van Alkmaar</li>
             <li><strong>All-in</strong> vanaf €30 p.p.</li>
           </ul>
         </div>
@@ -165,7 +194,7 @@
               <li>Iedereen maakt zijn eigen cocktails</li>
               <li>Ideaal voor verjaardagen en jubilea</li>
             </ul>
-            <a href="#aanvragen" class="card__link" data-occasion="Vriendengroep">Plan jullie avond <span aria-hidden="true">→</span></a>
+            <a href="vriendenuitje/" class="card__link">Meer over het vriendenuitje <span aria-hidden="true">→</span></a>
           </article>
 
           <article class="card card--featured reveal">
@@ -180,7 +209,7 @@
               <li>Makkelijk te combineren met de rest van je dag</li>
               <li>Jij hoeft niets te regelen, alleen de groep</li>
             </ul>
-            <a href="#aanvragen" class="card__link" data-occasion="Vrijgezellenfeest">Regel het vrijgezellenfeest <span aria-hidden="true">→</span></a>
+            <a href="vrijgezellenfeest/" class="card__link">Meer over het vrijgezellenfeest <span aria-hidden="true">→</span></a>
           </article>
 
           <article class="card reveal">
@@ -194,7 +223,7 @@
               <li>Of een complete cocktailbar voor je gasten</li>
               <li>Op kantoor, in een zaal of op locatie</li>
             </ul>
-            <a href="#aanvragen" class="card__link" data-occasion="Bedrijfsfeest">Vraag een voorstel aan <span aria-hidden="true">→</span></a>
+            <a href="bedrijfsuitje/" class="card__link">Meer over het bedrijfsuitje <span aria-hidden="true">→</span></a>
           </article>
         </div>
       </div>
@@ -219,6 +248,7 @@
               <li>Alcoholvrije varianten mogelijk</li>
             </ul>
             <p class="offer__price">Vanaf <strong>€30</strong> p.p. all-in</p>
+            <a class="offer__more" href="cocktailworkshop/">Alles over de cocktailworkshop <span aria-hidden="true">→</span></a>
           </article>
 
           <article class="offer reveal">
@@ -231,6 +261,7 @@
               <li>Opbouwen en opruimen inbegrepen</li>
             </ul>
             <p class="offer__price">Prijs <strong>op maat</strong></p>
+            <a class="offer__more" href="cocktailfeest/">Alles over een cocktailfeest <span aria-hidden="true">→</span></a>
           </article>
         </div>
 
@@ -255,7 +286,7 @@
         <div class="price__copy reveal">
           <p class="eyebrow eyebrow--dark">Transparant geprijsd</p>
           <h2>Wat kost een <em>cocktailworkshop?</em></h2>
-          <p class="section__lead">Een cocktailworkshop kost vanaf €30 per persoon, all-in. Schuif met het aantal personen en zie direct wat je ongeveer kwijt bent. De exacte prijs krijg je in een voorstel op maat.</p>
+          <p class="section__lead">Een cocktailworkshop kost vanaf €30 per persoon, all-in. Schuif met het aantal personen, kies je datum en dagdeel en vraag het direct aan. De exacte prijs krijg je in een voorstel op maat.</p>
           <ul class="ticks">
             <li>Geen verborgen kosten</li>
             <li>Vrijblijvend voorstel, je zit nergens aan vast</li>
@@ -263,8 +294,9 @@
           </ul>
         </div>
 
-        <div class="calc reveal" aria-labelledby="calc-title">
-          <h3 id="calc-title" class="calc__title">Prijsindicatie workshop</h3>
+        <!-- build:calc -->
+<div class="calc reveal" aria-labelledby="calc-title" data-type="Cocktailworkshop">
+          <h3 id="calc-title" class="calc__title">Prijs &amp; datum</h3>
 
           <fieldset class="calc__occasions">
             <legend>Gelegenheid</legend>
@@ -277,15 +309,30 @@
           <input type="range" id="calc-n" min="6" max="60" value="12" step="1">
           <div class="calc__scale" aria-hidden="true"><span>6</span><span>60</span></div>
 
-          <div class="calc__total">
-            <span>Vanaf</span>
-            <strong id="calc-total">€ 360</strong>
-            <small>all-in, incl. drank, materiaal en reiskosten binnen 30 km</small>
+          <div class="calc__total"><span>Vanaf</span><strong id="calc-total">€ 360</strong><small>all-in, incl. drank, materiaal en reiskosten binnen 30 km</small></div>
+
+          <p class="calc__legend" id="cal-label">Kies je datum</p>
+          <div class="cal" role="group" aria-labelledby="cal-label">
+            <div class="cal__head">
+              <button type="button" class="cal__nav" data-dir="-1" aria-label="Vorige maand">‹</button>
+              <strong class="cal__month" id="cal-month" aria-live="polite"></strong>
+              <button type="button" class="cal__nav" data-dir="1" aria-label="Volgende maand">›</button>
+            </div>
+            <div class="cal__dow" aria-hidden="true"><span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span></div>
+            <div class="cal__grid" id="cal-grid"></div>
           </div>
 
-          <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag deze datum aan <span aria-hidden="true">→</span></a>
-          <p class="calc__note">Indicatie op basis van €30 p.p. Meer dan 60 personen? Vraag een voorstel aan.</p>
+          <fieldset class="calc__occasions">
+            <legend>Dagdeel</legend>
+            <label><input type="radio" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
+            <label><input type="radio" name="calc-part" value="Middag"><span>Middag</span></label>
+            <label><input type="radio" name="calc-part" value="Avond"><span>Avond</span></label>
+          </fieldset>
+
+          <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag een voorstel aan <span aria-hidden="true">→</span></a>
+          <p class="calc__note">Indicatie op basis van €30 p.p. Jan bevestigt persoonlijk of je datum nog vrij is.</p>
         </div>
+<!-- /build:calc -->
       </div>
     </section>
 
@@ -293,8 +340,8 @@
     <section class="section section--dark about" id="jan">
       <div class="container about__grid">
         <div class="about__photo reveal">
-          <!-- Vervang dit blok door een echte foto: <img src="assets/jan-berkhout.jpg" alt="Jan Berkhout achter de bar"> -->
-          <div class="photo-ph" role="img" aria-label="Foto van Jan Berkhout (volgt)">
+          <!-- build:photo -->
+<div class="photo-ph" role="img" aria-label="Foto van Jan Berkhout (volgt)">
             <span class="photo-ph__mono">JB</span>
             <span class="photo-ph__hint">Foto van Jan achter de bar</span>
           </div>
@@ -302,18 +349,19 @@
             <span class="award__ico" aria-hidden="true">
               <svg viewBox="0 0 40 40"><circle cx="20" cy="15" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 23l-4 13 7-3 4 5 3-11M27 23l4 13-7-3-4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 9l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="currentColor"/></svg>
             </span>
-            <span><small>Verkozen tot</small><strong>Beste barman van Alkmaar</strong></span>
+            <span><small>Winnaar 2019 · UIT072</small><strong>De leukste bartender van Alkmaar</strong></span>
           </div>
+<!-- /build:photo -->
         </div>
 
         <div class="about__copy">
           <p class="eyebrow reveal">Je host</p>
           <h2 class="reveal">Maak kennis met <em>Jan Berkhout</em></h2>
-          <p class="reveal">Jan werkt al 10 jaar in de horeca en stond achter de bar van heel wat drukke zaken. Zijn vakmanschap viel op: hij werd verkozen tot beste barman van Alkmaar.</p>
+          <p class="reveal">Jan werkt al 10 jaar in de horeca en stond achter de bar van heel wat drukke zaken. Dat bleef niet onopgemerkt: in 2019 won hij de verkiezing De leukste bartender van Alkmaar van UIT072.</p>
           <p class="reveal">Met Shake by Jan neemt hij die ervaring mee naar jouw feest. Hij weet precies hoe je een groep meekrijgt, legt alles uit zonder dat het een schoolles wordt en zorgt dat elke cocktail er net zo goed uitziet als hij smaakt.</p>
           <dl class="stats reveal">
             <div><dt>10+</dt><dd>jaar horeca-ervaring</dd></div>
-            <div><dt>#1</dt><dd>barman van Alkmaar</dd></div>
+            <div><dt>2019</dt><dd>leukste bartender van Alkmaar</dd></div>
             <div><dt>30 km</dt><dd>rond Heerhugowaard</dd></div>
           </dl>
           <a href="#aanvragen" class="btn btn--gold btn--lg reveal">Boek Jan voor jouw feest <span aria-hidden="true">→</span></a>
@@ -440,7 +488,8 @@
           </a>
         </div>
 
-        <form class="form reveal" id="form" novalidate>
+        <!-- build:form -->
+<form class="form reveal" id="form" novalidate>
           <input type="hidden" name="access_key" value="JOUW-WEB3FORMS-KEY">
           <input type="hidden" name="subject" value="Nieuwe aanvraag via shakebyjan.nl">
           <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
@@ -461,7 +510,7 @@
             <div class="field">
               <label for="f-type">Wat zoek je?</label>
               <select id="f-type" name="Type">
-                <option>Cocktailworkshop</option>
+                <option selected>Cocktailworkshop</option>
                 <option>Cocktailbar op locatie</option>
                 <option>Weet ik nog niet</option>
               </select>
@@ -474,14 +523,26 @@
               <input type="date" id="f-date" name="Datum" required>
             </div>
             <div class="field">
-              <label for="f-n">Aantal personen</label>
-              <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+              <label for="f-part">Dagdeel</label>
+              <select id="f-part" name="Dagdeel" required>
+                <option value="">Kies…</option>
+                <option>Ochtend</option>
+                <option>Middag</option>
+                <option>Avond</option>
+                <option>Weet ik nog niet</option>
+              </select>
             </div>
           </div>
 
-          <div class="field">
-            <label for="f-place">Plaats van het feest</label>
-            <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+          <div class="form__row">
+            <div class="field">
+              <label for="f-n">Aantal personen</label>
+              <input type="number" id="f-n" name="Aantal personen" min="1" max="500" inputmode="numeric" placeholder="bijv. 12" required>
+            </div>
+            <div class="field">
+              <label for="f-place">Plaats van het feest</label>
+              <input type="text" id="f-place" name="Plaats" placeholder="bijv. Alkmaar" autocomplete="address-level2" required>
+            </div>
           </div>
 
           <div class="form__row">
@@ -509,11 +570,12 @@
           <p class="form__legal">Vrijblijvend. We gebruiken je gegevens alleen om je aanvraag te beantwoorden. Zie de <a href="privacy.html">privacyverklaring</a>.</p>
           <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
         </form>
+<!-- /build:form -->
       </div>
     </section>
   </main>
 
-  <!-- ============ FOOTER ============ -->
+<!-- build:footer -->
   <footer class="footer">
     <div class="container footer__grid">
       <div>
@@ -524,12 +586,13 @@
         <p class="footer__tag">Cocktailworkshops en cocktailbar op locatie in Heerhugowaard, Alkmaar en omgeving.</p>
       </div>
       <div>
-        <h4>Aanbod</h4>
+        <h4>Activiteiten</h4>
         <ul>
-          <li><a href="#aanbod">Cocktailworkshop</a></li>
-          <li><a href="#aanbod">Cocktailbar op locatie</a></li>
-          <li><a href="#gelegenheden">Vrijgezellenfeest</a></li>
-          <li><a href="#gelegenheden">Bedrijfsfeest</a></li>
+          <li><a href="cocktailworkshop/">Cocktailworkshop</a></li>
+          <li><a href="cocktailfeest/">Cocktailfeest</a></li>
+          <li><a href="vrijgezellenfeest/">Vrijgezellenfeest</a></li>
+          <li><a href="vriendenuitje/">Vriendenuitje</a></li>
+          <li><a href="bedrijfsuitje/">Bedrijfsuitje</a></li>
         </ul>
       </div>
       <div>
@@ -537,7 +600,7 @@
         <ul>
           <li><a href="#" data-whatsapp target="_blank" rel="noopener">WhatsApp</a></li>
           <li><a href="mailto:info@shakebyjan.nl">info@shakebyjan.nl</a></li>
-          <li>Regio Heerhugowaard (30 km)</li>
+          <li><a href="#werkgebied">Regio Heerhugowaard (30 km)</a></li>
         </ul>
       </div>
     </div>
@@ -551,17 +614,14 @@
   <div class="mobilebar" id="mobilebar">
     <div><small>Cocktailworkshop</small><strong>vanaf €30 p.p.</strong></div>
     <div class="mobilebar__actions">
-      <a class="mobilebar__wa" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z"/></svg>
-      </a>
+      <a class="mobilebar__wa" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z"/></svg></a>
       <a href="#aanvragen" class="btn btn--gold">Aanvragen</a>
     </div>
   </div>
 
   <!-- Zwevende WhatsApp-knop -->
-  <a class="wa-float" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z"/></svg>
-  </a>
+  <a class="wa-float" data-whatsapp href="#" target="_blank" rel="noopener" aria-label="Stuur Jan een WhatsApp-bericht"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.1-.4-.2z"/></svg></a>
+<!-- /build:footer -->
 
   <script src="js/main.js" defer></script>
 </body>

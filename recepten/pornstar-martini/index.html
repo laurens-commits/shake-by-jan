@@ -236,6 +236,18 @@
     </div>
   </footer>
 
+  <!-- Aanvraagvenster: elke aanvraagknop opent hier direct het formulier -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet__head">
+        <div><p class="sheet__eyebrow">Vrijblijvend</p><h2 id="sheet-title">Vraag een voorstel aan</h2></div>
+        <button type="button" class="sheet__close" data-close aria-label="Sluiten">×</button>
+      </div>
+      <div class="sheet__body" id="sheet-body"></div>
+    </div>
+  </div>
+
   <!-- Sticky mobiele CTA -->
   <div class="mobilebar" id="mobilebar">
     <div><small>Cocktailworkshop</small><strong>vanaf €30 p.p.</strong></div>

@@ -191,8 +191,15 @@
             <label><input type="radio" name="calc-occ" value="Bedrijfsfeest" checked><span>Bedrijf</span></label>
           </fieldset>
 
-          <label class="calc__label" for="calc-n">Aantal personen <output id="calc-n-out" for="calc-n">12</output></label>
-          <input type="range" id="calc-n" min="6" max="60" value="12" step="1">
+          <div class="calc__label">
+            <label for="calc-num">Aantal personen</label>
+            <div class="stepper">
+              <button type="button" class="stepper__btn" data-step="-1" aria-label="Minder personen">−</button>
+              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="12">
+              <button type="button" class="stepper__btn" data-step="1" aria-label="Meer personen">+</button>
+            </div>
+          </div>
+          <input type="range" id="calc-n" min="6" max="60" value="12" step="1" aria-label="Aantal personen (schuifregelaar)">
           <div class="calc__scale" aria-hidden="true"><span>6</span><span>60</span></div>
 
           <div class="calc__total"><span>Vanaf</span><strong id="calc-total">€ 360</strong><small>all-in, incl. drank, materiaal en reiskosten binnen 30 km</small></div>
@@ -449,6 +456,18 @@
       <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
     </div>
   </footer>
+
+  <!-- Aanvraagvenster: elke aanvraagknop opent hier direct het formulier -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet__head">
+        <div><p class="sheet__eyebrow">Vrijblijvend</p><h2 id="sheet-title">Vraag een voorstel aan</h2></div>
+        <button type="button" class="sheet__close" data-close aria-label="Sluiten">×</button>
+      </div>
+      <div class="sheet__body" id="sheet-body"></div>
+    </div>
+  </div>
 
   <!-- Sticky mobiele CTA -->
   <div class="mobilebar" id="mobilebar">

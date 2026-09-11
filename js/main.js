@@ -229,22 +229,77 @@
       });
   });
 
+  // ===== Aanvraagvenster: elke knop naar #aanvragen opent direct het formulier =====
+  var sheet = document.getElementById("sheet");
+  var sheetBody = document.getElementById("sheet-body");
+  var formHome = form.parentNode;
+  var formNext = form.nextSibling;
+  var lastFocus = null;
+
+  function openSheet() {
+    lastFocus = document.activeElement;
+    form.classList.add("is-in");
+    sheetBody.appendChild(form);
+    goToStep(0, false);
+    sheet.hidden = false;
+    document.body.classList.add("sheet-open");
+    requestAnimationFrame(function () { sheet.classList.add("is-open"); });
+    sheetBody.scrollTop = 0;
+    track("form_open");
+  }
+
+  function closeSheet() {
+    if (sheet.hidden) return;
+    sheet.classList.remove("is-open");
+    document.body.classList.remove("sheet-open");
+    setTimeout(function () {
+      sheet.hidden = true;
+      formHome.insertBefore(form, formNext);
+    }, 250);
+    if (lastFocus) lastFocus.focus({ preventScroll: true });
+  }
+
+  if (sheet) {
+    document.addEventListener("click", function (e) {
+      var link = e.target.closest('a[href="#aanvragen"]');
+      if (link) {
+        e.preventDefault();
+        setMenu(false);
+        openSheet();
+      } else if (e.target.closest("[data-close]")) {
+        closeSheet();
+      }
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+    // Binnenkomen via een link naar ...#aanvragen (bijv. vanaf een recept): venster direct openen
+    if (location.hash === "#aanvragen") openSheet();
+  }
+
   // ===== Prijscalculator =====
   var range = document.getElementById("calc-n");
   if (!range) return;
 
-  var out = document.getElementById("calc-n-out");
+  // Aantal personen: schuifregelaar, typvak en −/+ knoppen blijven met elkaar in sync
+  var num = document.getElementById("calc-num");
   var total = document.getElementById("calc-total");
   var fmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-  function updateCalc() {
-    var n = +range.value;
-    out.textContent = n + (n === +range.max && range.max > 60 ? "+" : "");
+  var persons = +range.value;
+  function setPersons(n, from) {
+    n = Math.max(1, Math.min(500, Math.round(n) || 1));
+    persons = n;
+    if (from !== "range") range.value = Math.min(Math.max(n, +range.min), +range.max);
+    if (from !== "num") num.value = n;
     if (total) total.textContent = fmt.format(n * PRICE_PP);
-    var pct = ((n - range.min) / (range.max - range.min)) * 100;
+    var pct = ((+range.value - range.min) / (range.max - range.min)) * 100;
     range.style.setProperty("--fill", pct + "%");
   }
-  range.addEventListener("input", updateCalc);
-  updateCalc();
+  range.addEventListener("input", function () { setPersons(+range.value, "range"); });
+  num.addEventListener("input", function () { if (num.value !== "") setPersons(+num.value, "num"); });
+  num.addEventListener("blur", function () { setPersons(+num.value || persons); });
+  document.querySelectorAll(".stepper__btn").forEach(function (b) {
+    b.addEventListener("click", function () { setPersons(persons + +b.getAttribute("data-step") * (+range.step || 1)); });
+  });
+  setPersons(persons);
 
   // ===== Agenda + dagdeel =====
   var calGrid = document.getElementById("cal-grid");
@@ -313,7 +368,7 @@
   calCta.addEventListener("click", function () {
     var occ = document.querySelector("input[name='calc-occ']:checked");
     if (occ) fOcc.value = occ.value;
-    fN.value = range.value;
+    fN.value = persons;
     if (selected) fDate.value = selected;
     if (currentPart()) fPart.value = currentPart();
     var calcEl = document.querySelector(".calc");
@@ -322,7 +377,7 @@
       var el = f.querySelector("input, select");
       if (el && el.checkValidity()) f.classList.remove("is-invalid");
     });
-    track("calc_request", { persons: +range.value, date: selected || "", daypart: currentPart() });
-    if (current === 0 && stepValid(0, false)) goToStep(1, false);
+    track("calc_request", { persons: persons, date: selected || "", daypart: currentPart() });
+    // Het aanvraagvenster gaat daarna open via de algemene #aanvragen-klik (zie hierboven)
   });
 })();

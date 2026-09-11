@@ -81,8 +81,15 @@ function calc({ mode = "workshop", occasion = "Vriendengroep", type = "Cocktailw
 ${occs.map(([v, l]) => `            <label><input type="radio" name="calc-occ" value="${v}"${v === checked ? " checked" : ""}><span>${l}</span></label>`).join("\n")}
           </fieldset>
 
-          <label class="calc__label" for="calc-n">${bar ? "Aantal gasten" : "Aantal personen"} <output id="calc-n-out" for="calc-n">${val}</output></label>
-          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}">
+          <div class="calc__label">
+            <label for="calc-num">${bar ? "Aantal gasten" : "Aantal personen"}</label>
+            <div class="stepper">
+              <button type="button" class="stepper__btn" data-step="-1" aria-label="Minder ${bar ? "gasten" : "personen"}">−</button>
+              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="${val}">
+              <button type="button" class="stepper__btn" data-step="1" aria-label="Meer ${bar ? "gasten" : "personen"}">+</button>
+            </div>
+          </div>
+          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}" aria-label="${bar ? "Aantal gasten" : "Aantal personen"} (schuifregelaar)">
           <div class="calc__scale" aria-hidden="true"><span>${min}</span><span>${max}${bar ? "+" : ""}</span></div>
 
           ${total}
@@ -261,6 +268,18 @@ ${cities.map((c) => `          <li><a href="${base}${c.slug}/">Cocktailworkshop 
       <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
     </div>
   </footer>
+
+  <!-- Aanvraagvenster: elke aanvraagknop opent hier direct het formulier -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet__head">
+        <div><p class="sheet__eyebrow">Vrijblijvend</p><h2 id="sheet-title">Vraag een voorstel aan</h2></div>
+        <button type="button" class="sheet__close" data-close aria-label="Sluiten">×</button>
+      </div>
+      <div class="sheet__body" id="sheet-body"></div>
+    </div>
+  </div>
 
   <!-- Sticky mobiele CTA -->
   <div class="mobilebar" id="mobilebar">

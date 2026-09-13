@@ -39,13 +39,18 @@
   var header = document.querySelector(".header");
   var mobilebar = document.getElementById("mobilebar");
   var booking = document.getElementById("aanvragen");
+  var calcBox = document.querySelector(".calc");
+  function inView(el) {
+    if (!el) return false;
+    var r = el.getBoundingClientRect();
+    return r.top < window.innerHeight && r.bottom > 0;
+  }
   function onScroll() {
     var y = window.scrollY;
     header.classList.toggle("is-scrolled", y > 30);
     if (!mobilebar) return;
-    var r = booking ? booking.getBoundingClientRect() : null;
-    var bookingVisible = r ? r.top < window.innerHeight && r.bottom > 0 : false;
-    mobilebar.classList.toggle("is-visible", y > 600 && !bookingVisible);
+    // De balk is overbodig zodra je bij de calculator of het formulier bent
+    mobilebar.classList.toggle("is-visible", y > 600 && !inView(booking) && !inView(calcBox));
   }
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
@@ -199,20 +204,22 @@
       }
     }
 
-    var data = new FormData(form);
-    var key = data.get("access_key") || "";
-    var leadParams = { value: +fN.value * PRICE_PP, currency: "EUR", occasion: fOcc.value, service: fType.value };
+    var leadParams = { value: +fN.value * PRICE_PP, currency: "EUR", occasion: fOcc.value, service: fType.value, form: "formulier" };
+    sendLead(new FormData(form), leadParams, form.querySelector("button[type='submit']"), showDone, function (msg) { setStatus(msg, true); });
+  });
 
+  // Verstuurt een aanvraag (gedeeld door het formulier en de calculator).
+  // Zolang er geen Web3Forms-key is, opent de mail-app met de ingevulde gegevens.
+  function sendLead(data, leadParams, btn, onDone, onFail) {
+    var key = data.get("access_key") || "";
     if (key.indexOf("JOUW") === 0) {
-      // Nog geen Web3Forms-key ingesteld: open de mail-app met de ingevulde gegevens
       var lines = [];
       data.forEach(function (v, k) { if (["access_key", "subject", "botcheck"].indexOf(k) === -1 && v) lines.push(k + ": " + v); });
       track("lead_mailto", leadParams);
       window.location.href = "mailto:" + FALLBACK_EMAIL + "?subject=" + encodeURIComponent("Aanvraag cocktailworkshop") + "&body=" + encodeURIComponent(lines.join("\n"));
       return;
     }
-
-    var btn = form.querySelector("button[type='submit']");
+    var label = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = "Versturen…";
     fetch("https://api.web3forms.com/submit", { method: "POST", body: data, headers: { Accept: "application/json" } })
@@ -220,59 +227,32 @@
       .then(function (res) {
         if (!res.success) throw new Error(res.message);
         track("generate_lead", leadParams);
-        showDone();
+        onDone();
       })
       .catch(function () {
         btn.disabled = false;
-        btn.innerHTML = 'Verstuur aanvraag <span aria-hidden="true">→</span>';
-        setStatus('Er ging iets mis bij het versturen. Probeer het opnieuw of <a href="' + waUrl + '" target="_blank" rel="noopener">app Jan direct</a>.', true);
+        btn.innerHTML = label;
+        onFail('Er ging iets mis bij het versturen. Probeer het opnieuw of <a href="' + waUrl + '" target="_blank" rel="noopener">app Jan direct</a>.');
       });
-  });
-
-  // ===== Aanvraagvenster: elke knop naar #aanvragen opent direct het formulier =====
-  var sheet = document.getElementById("sheet");
-  var sheetBody = document.getElementById("sheet-body");
-  var formHome = form.parentNode;
-  var formNext = form.nextSibling;
-  var lastFocus = null;
-
-  function openSheet() {
-    lastFocus = document.activeElement;
-    form.classList.add("is-in");
-    sheetBody.appendChild(form);
-    goToStep(0, false);
-    sheet.hidden = false;
-    document.body.classList.add("sheet-open");
-    requestAnimationFrame(function () { sheet.classList.add("is-open"); });
-    sheetBody.scrollTop = 0;
-    track("form_open");
   }
 
-  function closeSheet() {
-    if (sheet.hidden) return;
-    sheet.classList.remove("is-open");
-    document.body.classList.remove("sheet-open");
-    setTimeout(function () {
-      sheet.hidden = true;
-      formHome.insertBefore(form, formNext);
-    }, 250);
-    if (lastFocus) lastFocus.focus({ preventScroll: true });
+  // ===== Aanvraagknoppen ('Check beschikbaarheid', 'Aanvragen'): naar de calculator, daar begint de aanvraag =====
+  function goToCalc() {
+    calcBox.scrollIntoView({ behavior: "smooth", block: "start" });
+    calcBox.classList.remove("is-highlight");
+    void calcBox.offsetWidth; // animatie opnieuw starten
+    calcBox.classList.add("is-highlight");
+    track("cta_to_calc");
   }
-
-  if (sheet) {
+  if (calcBox) {
     document.addEventListener("click", function (e) {
-      var link = e.target.closest('a[href="#aanvragen"]');
-      if (link) {
-        e.preventDefault();
-        setMenu(false);
-        openSheet();
-      } else if (e.target.closest("[data-close]")) {
-        closeSheet();
-      }
+      if (!e.target.closest('a[href="#aanvragen"]')) return;
+      e.preventDefault();
+      setMenu(false);
+      goToCalc();
     });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
-    // Binnenkomen via een link naar ...#aanvragen (bijv. vanaf een recept): venster direct openen
-    if (location.hash === "#aanvragen") openSheet();
+    // Binnenkomen via een link naar ...#aanvragen (bijv. vanaf een recept)
+    if (location.hash === "#aanvragen") setTimeout(goToCalc, 60);
   }
 
   // ===== Prijscalculator =====
@@ -292,6 +272,7 @@
     if (total) total.textContent = fmt.format(n * PRICE_PP);
     var pct = ((+range.value - range.min) / (range.max - range.min)) * 100;
     range.style.setProperty("--fill", pct + "%");
+    updateFinish();
   }
   range.addEventListener("input", function () { setPersons(+range.value, "range"); });
   num.addEventListener("input", function () { if (num.value !== "") setPersons(+num.value, "num"); });
@@ -375,6 +356,7 @@
       ? "Vraag " + dayFmt.format(fromIso(selected)) + (part ? " · " + part.toLowerCase() : "") + " aan"
       : "Vraag een voorstel aan";
     calCta.innerHTML = label + ' <span aria-hidden="true">→</span>';
+    updateFinish();
   }
 
   calGrid.addEventListener("click", function (e) {
@@ -401,20 +383,129 @@
     updateCta();
   });
 
-  // Keuzes uit de calculator meenemen naar het formulier; is stap 1 dan compleet, direct door naar stap 2
+  // ===== Aanvraag afronden in de calculator (geen pop-up) =====
+  // Na 'Vraag … aan' klapt onder de calculator een kort blok open: je keuzes als labels (live bijgewerkt)
+  // en alleen de 3 velden die nog ontbreken.
+  var isBar = calcBox.getAttribute("data-mode") === "bar";
+  var service = calcBox.getAttribute("data-type") || "Cocktailworkshop";
+  var finish = document.getElementById("calc-finish");
+  var chips = document.getElementById("finish-chips");
+  var finishBtn = document.getElementById("finish-submit");
+  var finishStatus = document.getElementById("finish-status");
+  var finishWa = document.getElementById("finish-wa");
+  var qContact = document.getElementById("q-contact");
+  var finishStarted = false;
+
+  function checkedOcc() { return document.querySelector("input[name='calc-occ']:checked"); }
+  function personsLabel() { return persons + (isBar ? " gasten" : " personen"); }
+  function dateLabel() {
+    var part = currentPart().toLowerCase();
+    if (selected) return dayFmt.format(fromIso(selected)) + (part ? ", " + part : "");
+    return part ? part + ", datum nog open" : "datum nog open";
+  }
+  function waText() {
+    var occ = checkedOcc();
+    var t = "Hoi Jan! Wij zijn met " + personsLabel() + (occ ? " (" + occ.value.toLowerCase() + ")" : "");
+    if (selected) t += " en zoeken " + dayFmt.format(fromIso(selected)) + (currentPart() ? " (" + currentPart().toLowerCase() + ")" : "");
+    t += " een " + service.toLowerCase() + ". " + (selected ? "Is die datum nog vrij?" : "Kun je een voorstel sturen?");
+    return t;
+  }
+
+  function updateFinish() {
+    if (!finish || finish.hidden || !chips) return;
+    var occ = checkedOcc();
+    chips.innerHTML = [occ ? occ.nextElementSibling.textContent : "", personsLabel(), dateLabel()]
+      .filter(Boolean).map(function (t) { return '<span class="chip">' + t + "</span>"; }).join("") +
+      '<button type="button" class="chip chip--edit" data-edit>Wijzig</button>';
+    finishBtn.innerHTML = (selected ? "Check of " + dayFmt.format(fromIso(selected)) + " vrij is" : "Vraag een voorstel aan") + ' <span aria-hidden="true">→</span>';
+    finishWa.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(waText());
+  }
+
+  document.querySelectorAll("input[name='calc-occ']").forEach(function (r) { r.addEventListener("change", updateFinish); });
+
   calCta.addEventListener("click", function () {
-    var occ = document.querySelector("input[name='calc-occ']:checked");
+    // Keuzes ook in het uitgebreide formulier onderaan zetten, voor wie daar verder gaat
+    var occ = checkedOcc();
     if (occ) fOcc.value = occ.value;
     fN.value = persons;
     if (selected) fDate.value = selected;
     if (currentPart()) fPart.value = currentPart();
-    var calcEl = document.querySelector(".calc");
-    if (calcEl && calcEl.getAttribute("data-type")) fType.value = calcEl.getAttribute("data-type");
-    form.querySelectorAll(".field.is-invalid").forEach(function (f) {
-      var el = f.querySelector("input, select");
-      if (el && el.checkValidity()) f.classList.remove("is-invalid");
-    });
+    fType.value = service;
+
+    finish.hidden = false;
+    calCta.hidden = true;
+    calCta.setAttribute("aria-expanded", "true");
+    updateFinish();
+    finish.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Op touch niet automatisch focussen: het toetsenbord zou de labels met je keuzes wegdrukken
+    if (!window.matchMedia("(pointer: coarse)").matches) {
+      setTimeout(function () { document.getElementById("q-place").focus({ preventScroll: true }); }, 450);
+    }
     track("calc_request", { persons: persons, date: selected || "", daypart: currentPart() });
-    // Het aanvraagvenster gaat daarna open via de algemene #aanvragen-klik (zie hierboven)
+  });
+
+  chips.addEventListener("click", function (e) {
+    if (e.target.closest("[data-edit]")) calcBox.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  function contactValid() {
+    var v = qContact.value.trim();
+    var ok = v.indexOf("@") > -1 ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) : v.replace(/\D/g, "").length >= 10;
+    qContact.setCustomValidity(ok ? "" : "Vul een geldig e-mailadres of telefoonnummer in");
+    return ok;
+  }
+
+  function setFinishStatus(msg, isError) {
+    finishStatus.innerHTML = msg || "";
+    finishStatus.className = "form__status" + (isError ? " is-error" : "");
+  }
+
+  finish.addEventListener("input", function (e) {
+    if (!finishStarted) { finishStarted = true; track("form_start", { form: "calculator" }); }
+    if (e.target === qContact) contactValid();
+    var field = e.target.closest(".field");
+    if (field && e.target.checkValidity()) field.classList.remove("is-invalid");
+  });
+
+  function showFinishDone() {
+    var recap = [personsLabel(), dateLabel(), document.getElementById("q-place").value].filter(Boolean).join(" · ");
+    finish.innerHTML =
+      '<div class="finish__done"><p class="calc__legend">Aanvraag verstuurd</p>' +
+      "<h4>Proost, <em>bedankt!</em></h4>" +
+      '<p class="finish__recap">' + recap + "</p>" +
+      '<ol class="finish__next"><li>Jan checkt of ' + (selected ? dayFmt.format(fromIso(selected)) : "je datum") + " vrij is.</li>" +
+      "<li>Je krijgt een voorstel met een vaste prijs.</li><li>Pas als jij akkoord bent, staat het vast.</li></ol>" +
+      '<a class="finish__wa" href="' + finishWa.href + '" target="_blank" rel="noopener">Nog een vraag? App Jan</a></div>';
+  }
+
+  finish.addEventListener("submit", function (e) {
+    e.preventDefault();
+    setFinishStatus("");
+    contactValid();
+    var firstBad = null;
+    finish.querySelectorAll("[required]").forEach(function (el) {
+      var ok = el.checkValidity();
+      el.closest(".field").classList.toggle("is-invalid", !ok);
+      if (!ok && !firstBad) firstBad = el;
+    });
+    if (firstBad) {
+      firstBad.focus();
+      setFinishStatus(firstBad === qContact && qContact.value ? "Vul een geldig e-mailadres of telefoonnummer in." : "Vul de gemarkeerde velden nog even in.", true);
+      return;
+    }
+
+    var data = new FormData(finish);
+    var contact = qContact.value.trim();
+    var occ = checkedOcc();
+    data.append("Gelegenheid", occ ? occ.value : "");
+    data.append("Type", service);
+    data.append(isBar ? "Aantal gasten" : "Aantal personen", persons);
+    data.append("Datum", selected ? fullFmt.format(fromIso(selected)) : "nog open");
+    data.append("Dagdeel", currentPart() || "nog open");
+    if (contact.indexOf("@") > -1) data.append("email", contact); else data.append("Telefoon", contact);
+    data.append("Bron", "Calculator " + location.pathname);
+
+    var leadParams = { value: isBar ? 0 : persons * PRICE_PP, currency: "EUR", occasion: occ ? occ.value : "", service: service, form: "calculator" };
+    sendLead(data, leadParams, finishBtn, showFinishDone, function (msg) { setFinishStatus(msg, true); });
   });
 })();

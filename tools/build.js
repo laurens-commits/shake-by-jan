@@ -73,7 +73,7 @@ function calc({ mode = "workshop", occasion = "Vriendengroep", type = "Cocktailw
   const total = bar
     ? `<div class="calc__total"><span>Prijs</span><strong>Op maat</strong><small>je krijgt vooraf een vaste prijs, afgestemd op je feest</small></div>`
     : `<div class="calc__total"><span>Vanaf</span><strong id="calc-total">€ ${val * 30}</strong><small>all-in, incl. drank, materiaal en reiskosten binnen 30 km</small></div>`;
-  return `<div class="calc reveal" aria-labelledby="calc-title" data-type="${type}">
+  return `<div class="calc reveal" aria-labelledby="calc-title" data-type="${type}" data-mode="${mode}">
           <h3 id="calc-title" class="calc__title">${bar ? "Datum &amp; gasten" : "Prijs &amp; datum"}</h3>
 
           <fieldset class="calc__occasions">
@@ -112,8 +112,33 @@ ${occs.map(([v, l]) => `            <label><input type="radio" autocomplete="off
             <label><input type="radio" autocomplete="off" name="calc-part" value="Avond"><span>Avond</span></label>
           </fieldset>
 
-          <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag een voorstel aan ${ARROW}</a>
+          <button type="button" class="btn btn--dark btn--lg btn--block" id="calc-cta" aria-expanded="false" aria-controls="calc-finish">Vraag een voorstel aan ${ARROW}</button>
           <p class="calc__note">${bar ? "" : "Indicatie op basis van €30 p.p. "}Jan bevestigt persoonlijk of je datum nog vrij is.</p>
+
+          <!-- Aanvraag afronden in de calculator zelf: keuzes staan er al, alleen wat ontbreekt -->
+          <form class="calc__finish" id="calc-finish" novalidate hidden>
+            <input type="hidden" name="access_key" value="JOUW-WEB3FORMS-KEY">
+            <input type="hidden" name="subject" value="Nieuwe aanvraag via shakebyjan.nl">
+            <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+            <p class="calc__legend">Jouw keuze</p>
+            <div class="finish__chips" id="finish-chips"></div>
+            <h4 class="finish__title">Nog 3 dingen, dan is het geregeld</h4>
+            <div class="field">
+              <label for="q-place">Plaats van het feest</label>
+              <input type="text" id="q-place" name="Plaats" placeholder="Alkmaar" autocomplete="address-level2" required>
+            </div>
+            <div class="field">
+              <label for="q-name">Naam</label>
+              <input type="text" id="q-name" name="Naam" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="q-contact">E-mail of telefoon</label>
+              <input type="text" id="q-contact" name="Contact" placeholder="naam@voorbeeld.nl of 06 12345678" autocomplete="email" required>
+            </div>
+            <button type="submit" class="btn btn--gold btn--lg btn--block" id="finish-submit">Vraag een voorstel aan ${ARROW}</button>
+            <p class="finish__trust">Jan reageert persoonlijk · vrijblijvend · <a id="finish-wa" href="#" target="_blank" rel="noopener">of via WhatsApp</a></p>
+            <p class="form__status" id="finish-status" role="status" aria-live="polite"></p>
+          </form>
         </div>`;
 }
 
@@ -268,18 +293,6 @@ ${cities.map((c) => `          <li><a href="${base}${c.slug}/">Cocktailworkshop 
       <p class="footer__18">Geen 18, geen alcohol. Geniet verantwoord.</p>
     </div>
   </footer>
-
-  <!-- Aanvraagvenster: elke aanvraagknop opent hier direct het formulier -->
-  <div class="sheet" id="sheet" hidden>
-    <div class="sheet__backdrop" data-close></div>
-    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-      <div class="sheet__head">
-        <div><p class="sheet__eyebrow">Vrijblijvend</p><h2 id="sheet-title">Vraag een voorstel aan</h2></div>
-        <button type="button" class="sheet__close" data-close aria-label="Sluiten">×</button>
-      </div>
-      <div class="sheet__body" id="sheet-body"></div>
-    </div>
-  </div>
 
   <!-- Sticky mobiele CTA -->
   <div class="mobilebar" id="mobilebar">

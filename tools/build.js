@@ -7,6 +7,14 @@ const path = require("path");
 const pages = require("./pages");
 const cities = require("./cities");
 const recipes = require("./recipes");
+const crypto = require("crypto");
+
+// Versienummer achter CSS/JS-links: verandert zodra de bestanden veranderen, zodat telefoons
+// (die GitHub Pages-bestanden een tijd cachen) na een update direct de nieuwe versie laden.
+const ASSET_VERSION = crypto.createHash("md5")
+  .update(["css/style.css", "js/main.js", "js/consent.js"].map((f) => fs.readFileSync(path.join(__dirname, "..", f))).join(""))
+  .digest("hex").slice(0, 8);
+const bust = (html) => html.replace(/(css\/style\.css|js\/main\.js|js\/consent\.js)(\?v=\w+)?"/g, `$1?v=${ASSET_VERSION}"`);
 
 const ROOT = path.join(__dirname, "..");
 const SITE = "https://www.shakebyjan.nl/";
@@ -89,7 +97,11 @@ ${occs.map(([v, l]) => `            <label><input type="radio" autocomplete="off
               <button type="button" class="stepper__btn" data-step="1" aria-label="Meer ${bar ? "gasten" : "personen"}">+</button>
             </div>
           </div>
-          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}" autocomplete="off" aria-label="${bar ? "Aantal gasten" : "Aantal personen"} (schuifregelaar)">
+          <div class="slider" id="calc-n" role="slider" tabindex="0" data-min="${min}" data-max="${max}" data-step="${step}"
+               aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}" aria-label="${bar ? "Aantal gasten" : "Aantal personen"}">
+            <div class="slider__track"><div class="slider__fill"></div></div>
+            <div class="slider__thumb"></div>
+          </div>
           <div class="calc__scale" aria-hidden="true"><span>${min}</span><span>${max}${bar ? "+" : ""}</span></div>
 
           ${total}
@@ -122,7 +134,7 @@ ${occs.map(([v, l]) => `            <label><input type="radio" autocomplete="off
             <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
             <p class="calc__legend">Jouw keuze</p>
             <div class="finish__chips" id="finish-chips"></div>
-            <h4 class="finish__title">Nog 3 dingen, dan is het geregeld</h4>
+            <h4 class="finish__title">Nog 4 dingen, dan is het geregeld</h4>
             <div class="field">
               <label for="q-place">Plaats van het feest</label>
               <input type="text" id="q-place" name="Plaats" placeholder="Alkmaar" autocomplete="address-level2" required>
@@ -131,9 +143,15 @@ ${occs.map(([v, l]) => `            <label><input type="radio" autocomplete="off
               <label for="q-name">Naam</label>
               <input type="text" id="q-name" name="Naam" autocomplete="name" required>
             </div>
-            <div class="field">
-              <label for="q-contact">E-mail of telefoon</label>
-              <input type="text" id="q-contact" name="Contact" placeholder="naam@voorbeeld.nl of 06 12345678" autocomplete="email" required>
+            <div class="form__row">
+              <div class="field">
+                <label for="q-mail">E-mailadres</label>
+                <input type="email" id="q-mail" name="email" placeholder="naam@voorbeeld.nl" autocomplete="email" inputmode="email" required>
+              </div>
+              <div class="field">
+                <label for="q-phone">Telefoonnummer</label>
+                <input type="tel" id="q-phone" name="Telefoon" placeholder="06 12345678" autocomplete="tel" inputmode="tel" required>
+              </div>
             </div>
             <button type="submit" class="btn btn--gold btn--lg btn--block" id="finish-submit">Vraag een voorstel aan ${ARROW}</button>
             <p class="finish__trust">Jan reageert persoonlijk · vrijblijvend · <a id="finish-wa" href="#" target="_blank" rel="noopener">of via WhatsApp</a></p>
@@ -419,11 +437,11 @@ function head({ base, title, description, url, ld = [], type = "website" }) {
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:url" content="${url}">
-  <script src="${base}js/consent.js" data-privacy="${base}privacy.html"></script>
+  <script src="${base}js/consent.js?v=${ASSET_VERSION}" data-privacy="${base}privacy.html"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="${base}css/style.css">
+  <link rel="stylesheet" href="${base}css/style.css?v=${ASSET_VERSION}">
 ${ld.map((o) => `  <script type="application/ld+json">${JSON.stringify(o)}</script>`).join("\n")}
 </head>`;
 }
@@ -445,7 +463,7 @@ ${main}
 ${footer(base, cta)}
 <!-- /build:footer -->
 
-  <script src="${base}js/main.js" defer></script>
+  <script src="${base}js/main.js?v=${ASSET_VERSION}" defer></script>
 </body>
 </html>
 `;
@@ -848,7 +866,9 @@ function fill(html, name, content) {
   return html.replace(re, () => `<!-- build:${name} -->\n${content}\n<!-- /build:${name} -->`);
 }
 
-let index = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+let index = bust(fs.readFileSync(path.join(ROOT, "index.html"), "utf8"));
+// privacy.html heeft een eigen (handgeschreven) head: alleen de versienummers bijwerken
+fs.writeFileSync(path.join(ROOT, "privacy.html"), bust(fs.readFileSync(path.join(ROOT, "privacy.html"), "utf8")));
 index = index.replace(/\s*<!-- Vervang dit blok[^\n]*-->/, "");
 index = wrapOnce(index, "header", /  <header class="header" id="top">[\s\S]*?<\/header>/);
 index = wrapOnce(index, "calc", /<div class="calc reveal"[\s\S]*?<p class="calc__note">[^<]*<\/p>\s*<\/div>/);

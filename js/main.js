@@ -256,61 +256,75 @@
   }
 
   // ===== Prijscalculator =====
-  var range = document.getElementById("calc-n");
-  if (!range) return;
+  var slider = document.getElementById("calc-n");
+  if (!slider) return;
 
-  // Aantal personen: schuifregelaar, typvak en −/+ knoppen blijven met elkaar in sync
+  // Aantal personen: eigen schuifregelaar (div met role="slider"), typvak en −/+ knoppen blijven in sync.
+  // Bewust geen <input type="range">: op mobiel vochten het native schuifje, onze touch-code en de
+  // pagina-scroll om de vinger, waardoor de waarde terugsprong. Dit element heeft geen eigen gedrag.
   var num = document.getElementById("calc-num");
   var total = document.getElementById("calc-total");
   var fmt = new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-  var persons = +range.value;
+  var sMin = +slider.getAttribute("data-min");
+  var sMax = +slider.getAttribute("data-max");
+  var sStep = +slider.getAttribute("data-step") || 1;
+  var sliderVal = +slider.getAttribute("aria-valuenow");
+  var persons = sliderVal;
   function setPersons(n, from) {
     n = Math.max(1, Math.min(500, Math.round(n) || 1));
     persons = n;
-    if (from !== "range") range.value = Math.min(Math.max(n, +range.min), +range.max);
+    sliderVal = Math.min(Math.max(n, sMin), sMax);
     if (from !== "num") num.value = n;
     if (total) total.textContent = fmt.format(n * PRICE_PP);
-    var pct = ((+range.value - range.min) / (range.max - range.min)) * 100;
-    range.style.setProperty("--fill", pct + "%");
+    var pct = (sliderVal - sMin) / (sMax - sMin);
+    slider.style.setProperty("--fill", pct * 100 + "%");
+    slider.style.setProperty("--pos", pct);
+    slider.setAttribute("aria-valuenow", sliderVal);
+    slider.setAttribute("aria-valuetext", n + (slider.getAttribute("aria-label").indexOf("gasten") > -1 ? " gasten" : " personen"));
     updateFinish();
   }
-  range.addEventListener("input", function () { setPersons(+range.value, "range"); });
   num.addEventListener("input", function () { if (num.value !== "") setPersons(+num.value, "num"); });
   num.addEventListener("blur", function () { setPersons(+num.value || persons); });
   document.querySelectorAll(".stepper__btn").forEach(function (b) {
-    b.addEventListener("click", function () { setPersons(persons + +b.getAttribute("data-step") * (+range.step || 1)); });
+    b.addEventListener("click", function () { setPersons(persons + +b.getAttribute("data-step") * sStep); });
   });
   // Beginwaarde uit het typvak (dat kan een getal boven het schuifmaximum bevatten)
-  setPersons(+num.value || +range.value);
+  setPersons(+num.value || sliderVal);
 
-  // Aanraken (telefoon/tablet): eigen sleep-afhandeling. Het native schuifje breekt op mobiel af
-  // zodra de vinger iets verticaal beweegt (de pagina gaat dan scrollen) en reageert op iOS alleen
-  // op het bolletje zelf. Nu zet tikken of slepen op de hele balk de waarde direct onder je vinger.
-  // De muis houdt het native gedrag.
+  // Slepen of tikken met vinger, pen of muis: de waarde volgt direct de positie op de balk
   var THUMB = 28;
   function valueFromX(x) {
-    var rect = range.getBoundingClientRect();
+    var rect = slider.getBoundingClientRect();
     var pct = Math.max(0, Math.min(1, (x - rect.left - THUMB / 2) / (rect.width - THUMB)));
-    var min = +range.min, max = +range.max, step = +range.step || 1;
-    return Math.min(max, Math.round((min + pct * (max - min)) / step) * step);
+    return Math.min(sMax, sMin + Math.round((pct * (sMax - sMin)) / sStep) * sStep);
   }
-  range.addEventListener("pointerdown", function (e) {
-    if (e.pointerType === "mouse") return;
+  slider.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
-    try { range.setPointerCapture(e.pointerId); } catch (err) { /* niet ondersteund: events komen toch binnen */ }
-    setPersons(valueFromX(e.clientX), "touch");
-    function move(ev) { setPersons(valueFromX(ev.clientX), "touch"); }
+    slider.focus({ preventScroll: true });
+    try { slider.setPointerCapture(e.pointerId); } catch (err) { /* niet ondersteund: events komen toch binnen */ }
+    slider.classList.add("is-dragging");
+    setPersons(valueFromX(e.clientX));
+    function move(ev) { setPersons(valueFromX(ev.clientX)); }
     function end() {
-      range.removeEventListener("pointermove", move);
-      range.removeEventListener("pointerup", end);
-      range.removeEventListener("pointercancel", end);
+      slider.classList.remove("is-dragging");
+      slider.removeEventListener("pointermove", move);
+      slider.removeEventListener("pointerup", end);
+      slider.removeEventListener("pointercancel", end);
     }
-    range.addEventListener("pointermove", move);
-    range.addEventListener("pointerup", end);
-    range.addEventListener("pointercancel", end);
+    slider.addEventListener("pointermove", move);
+    slider.addEventListener("pointerup", end);
+    slider.addEventListener("pointercancel", end);
   });
-  // Voorkomt dat het native schuifje (iOS) tegelijk met onze afhandeling gaat slepen
-  range.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+  // Toetsenbord (toegankelijkheid): pijltjes, PageUp/PageDown, Home/End
+  slider.addEventListener("keydown", function (e) {
+    var d = { ArrowRight: sStep, ArrowUp: sStep, ArrowLeft: -sStep, ArrowDown: -sStep, PageUp: sStep * 5, PageDown: -sStep * 5 }[e.key];
+    if (e.key === "Home") d = sMin - sliderVal;
+    if (e.key === "End") d = sMax - sliderVal;
+    if (d === undefined) return;
+    e.preventDefault();
+    setPersons(sliderVal + d);
+  });
 
   // ===== Agenda + dagdeel =====
   var calGrid = document.getElementById("cal-grid");
@@ -379,7 +393,7 @@
   // Herstelt de browser velden (herladen, terugknop, bfcache)? Dan alles opnieuw gelijkzetten,
   // anders staat het schuifje op de herstelde waarde terwijl prijs en balk nog de oude tonen.
   window.addEventListener("pageshow", function () {
-    setPersons(+num.value || +range.value);
+    setPersons(+num.value || sliderVal);
     updateCta();
   });
 
@@ -393,7 +407,8 @@
   var finishBtn = document.getElementById("finish-submit");
   var finishStatus = document.getElementById("finish-status");
   var finishWa = document.getElementById("finish-wa");
-  var qContact = document.getElementById("q-contact");
+  var qMail = document.getElementById("q-mail");
+  var qPhone = document.getElementById("q-phone");
   var finishStarted = false;
 
   function checkedOcc() { return document.querySelector("input[name='calc-occ']:checked"); }
@@ -448,10 +463,10 @@
     if (e.target.closest("[data-edit]")) calcBox.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
-  function contactValid() {
-    var v = qContact.value.trim();
-    var ok = v.indexOf("@") > -1 ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) : v.replace(/\D/g, "").length >= 10;
-    qContact.setCustomValidity(ok ? "" : "Vul een geldig e-mailadres of telefoonnummer in");
+  // Telefoonnummer: minimaal 10 cijfers (spaties, streepjes en +31 mogen)
+  function phoneValid() {
+    var ok = qPhone.value.replace(/\D/g, "").length >= 10;
+    qPhone.setCustomValidity(ok ? "" : "Vul een geldig telefoonnummer in");
     return ok;
   }
 
@@ -462,7 +477,7 @@
 
   finish.addEventListener("input", function (e) {
     if (!finishStarted) { finishStarted = true; track("form_start", { form: "calculator" }); }
-    if (e.target === qContact) contactValid();
+    if (e.target === qPhone) phoneValid();
     var field = e.target.closest(".field");
     if (field && e.target.checkValidity()) field.classList.remove("is-invalid");
   });
@@ -481,7 +496,7 @@
   finish.addEventListener("submit", function (e) {
     e.preventDefault();
     setFinishStatus("");
-    contactValid();
+    phoneValid();
     var firstBad = null;
     finish.querySelectorAll("[required]").forEach(function (el) {
       var ok = el.checkValidity();
@@ -490,19 +505,20 @@
     });
     if (firstBad) {
       firstBad.focus();
-      setFinishStatus(firstBad === qContact && qContact.value ? "Vul een geldig e-mailadres of telefoonnummer in." : "Vul de gemarkeerde velden nog even in.", true);
+      var msg = "Vul de gemarkeerde velden nog even in.";
+      if (firstBad === qMail && qMail.value) msg = "Vul een geldig e-mailadres in.";
+      if (firstBad === qPhone && qPhone.value) msg = "Vul een geldig telefoonnummer in.";
+      setFinishStatus(msg, true);
       return;
     }
 
     var data = new FormData(finish);
-    var contact = qContact.value.trim();
     var occ = checkedOcc();
     data.append("Gelegenheid", occ ? occ.value : "");
     data.append("Type", service);
     data.append(isBar ? "Aantal gasten" : "Aantal personen", persons);
     data.append("Datum", selected ? fullFmt.format(fromIso(selected)) : "nog open");
     data.append("Dagdeel", currentPart() || "nog open");
-    if (contact.indexOf("@") > -1) data.append("email", contact); else data.append("Telefoon", contact);
     data.append("Bron", "Calculator " + location.pathname);
 
     var leadParams = { value: isBar ? 0 : persons * PRICE_PP, currency: "EUR", occasion: occ ? occ.value : "", service: service, form: "calculator" };

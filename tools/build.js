@@ -78,18 +78,18 @@ function calc({ mode = "workshop", occasion = "Vriendengroep", type = "Cocktailw
 
           <fieldset class="calc__occasions">
             <legend>Gelegenheid</legend>
-${occs.map(([v, l]) => `            <label><input type="radio" name="calc-occ" value="${v}"${v === checked ? " checked" : ""}><span>${l}</span></label>`).join("\n")}
+${occs.map(([v, l]) => `            <label><input type="radio" autocomplete="off" name="calc-occ" value="${v}"${v === checked ? " checked" : ""}><span>${l}</span></label>`).join("\n")}
           </fieldset>
 
           <div class="calc__label">
             <label for="calc-num">${bar ? "Aantal gasten" : "Aantal personen"}</label>
             <div class="stepper">
               <button type="button" class="stepper__btn" data-step="-1" aria-label="Minder ${bar ? "gasten" : "personen"}">−</button>
-              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="${val}">
+              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="${val}" autocomplete="off">
               <button type="button" class="stepper__btn" data-step="1" aria-label="Meer ${bar ? "gasten" : "personen"}">+</button>
             </div>
           </div>
-          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}" aria-label="${bar ? "Aantal gasten" : "Aantal personen"} (schuifregelaar)">
+          <input type="range" id="calc-n" min="${min}" max="${max}" value="${val}" step="${step}" autocomplete="off" aria-label="${bar ? "Aantal gasten" : "Aantal personen"} (schuifregelaar)">
           <div class="calc__scale" aria-hidden="true"><span>${min}</span><span>${max}${bar ? "+" : ""}</span></div>
 
           ${total}
@@ -107,9 +107,9 @@ ${occs.map(([v, l]) => `            <label><input type="radio" name="calc-occ" v
 
           <fieldset class="calc__occasions">
             <legend>Dagdeel</legend>
-            <label><input type="radio" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
-            <label><input type="radio" name="calc-part" value="Middag"><span>Middag</span></label>
-            <label><input type="radio" name="calc-part" value="Avond"><span>Avond</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Middag"><span>Middag</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Avond"><span>Avond</span></label>
           </fieldset>
 
           <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag een voorstel aan ${ARROW}</a>

@@ -185,20 +185,20 @@
 
           <fieldset class="calc__occasions">
             <legend>Gelegenheid</legend>
-            <label><input type="radio" name="calc-occ" value="Verjaardag of jubileum" checked><span>Verjaardag</span></label>
-            <label><input type="radio" name="calc-occ" value="Bruiloft"><span>Bruiloft</span></label>
-            <label><input type="radio" name="calc-occ" value="Bedrijfsfeest"><span>Bedrijf</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-occ" value="Verjaardag of jubileum" checked><span>Verjaardag</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-occ" value="Bruiloft"><span>Bruiloft</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-occ" value="Bedrijfsfeest"><span>Bedrijf</span></label>
           </fieldset>
 
           <div class="calc__label">
             <label for="calc-num">Aantal gasten</label>
             <div class="stepper">
               <button type="button" class="stepper__btn" data-step="-1" aria-label="Minder gasten">−</button>
-              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="40">
+              <input type="number" id="calc-num" inputmode="numeric" min="1" max="500" value="40" autocomplete="off">
               <button type="button" class="stepper__btn" data-step="1" aria-label="Meer gasten">+</button>
             </div>
           </div>
-          <input type="range" id="calc-n" min="10" max="150" value="40" step="5" aria-label="Aantal gasten (schuifregelaar)">
+          <input type="range" id="calc-n" min="10" max="150" value="40" step="5" autocomplete="off" aria-label="Aantal gasten (schuifregelaar)">
           <div class="calc__scale" aria-hidden="true"><span>10</span><span>150+</span></div>
 
           <div class="calc__total"><span>Prijs</span><strong>Op maat</strong><small>je krijgt vooraf een vaste prijs, afgestemd op je feest</small></div>
@@ -216,9 +216,9 @@
 
           <fieldset class="calc__occasions">
             <legend>Dagdeel</legend>
-            <label><input type="radio" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
-            <label><input type="radio" name="calc-part" value="Middag"><span>Middag</span></label>
-            <label><input type="radio" name="calc-part" value="Avond"><span>Avond</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Ochtend"><span>Ochtend</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Middag"><span>Middag</span></label>
+            <label><input type="radio" autocomplete="off" name="calc-part" value="Avond"><span>Avond</span></label>
           </fieldset>
 
           <a href="#aanvragen" class="btn btn--dark btn--lg btn--block" id="calc-cta">Vraag een voorstel aan <span aria-hidden="true">→</span></a>

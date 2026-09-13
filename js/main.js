@@ -299,7 +299,37 @@
   document.querySelectorAll(".stepper__btn").forEach(function (b) {
     b.addEventListener("click", function () { setPersons(persons + +b.getAttribute("data-step") * (+range.step || 1)); });
   });
-  setPersons(persons);
+  // Beginwaarde uit het typvak (dat kan een getal boven het schuifmaximum bevatten)
+  setPersons(+num.value || +range.value);
+
+  // Aanraken (telefoon/tablet): eigen sleep-afhandeling. Het native schuifje breekt op mobiel af
+  // zodra de vinger iets verticaal beweegt (de pagina gaat dan scrollen) en reageert op iOS alleen
+  // op het bolletje zelf. Nu zet tikken of slepen op de hele balk de waarde direct onder je vinger.
+  // De muis houdt het native gedrag.
+  var THUMB = 28;
+  function valueFromX(x) {
+    var rect = range.getBoundingClientRect();
+    var pct = Math.max(0, Math.min(1, (x - rect.left - THUMB / 2) / (rect.width - THUMB)));
+    var min = +range.min, max = +range.max, step = +range.step || 1;
+    return Math.min(max, Math.round((min + pct * (max - min)) / step) * step);
+  }
+  range.addEventListener("pointerdown", function (e) {
+    if (e.pointerType === "mouse") return;
+    e.preventDefault();
+    try { range.setPointerCapture(e.pointerId); } catch (err) { /* niet ondersteund: events komen toch binnen */ }
+    setPersons(valueFromX(e.clientX), "touch");
+    function move(ev) { setPersons(valueFromX(ev.clientX), "touch"); }
+    function end() {
+      range.removeEventListener("pointermove", move);
+      range.removeEventListener("pointerup", end);
+      range.removeEventListener("pointercancel", end);
+    }
+    range.addEventListener("pointermove", move);
+    range.addEventListener("pointerup", end);
+    range.addEventListener("pointercancel", end);
+  });
+  // Voorkomt dat het native schuifje (iOS) tegelijk met onze afhandeling gaat slepen
+  range.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
   // ===== Agenda + dagdeel =====
   var calGrid = document.getElementById("cal-grid");
@@ -363,6 +393,13 @@
   document.querySelectorAll("input[name='calc-part']").forEach(function (r) { r.addEventListener("change", updateCta); });
   renderCal();
   updateCta();
+
+  // Herstelt de browser velden (herladen, terugknop, bfcache)? Dan alles opnieuw gelijkzetten,
+  // anders staat het schuifje op de herstelde waarde terwijl prijs en balk nog de oude tonen.
+  window.addEventListener("pageshow", function () {
+    setPersons(+num.value || +range.value);
+    updateCta();
+  });
 
   // Keuzes uit de calculator meenemen naar het formulier; is stap 1 dan compleet, direct door naar stap 2
   calCta.addEventListener("click", function () {
